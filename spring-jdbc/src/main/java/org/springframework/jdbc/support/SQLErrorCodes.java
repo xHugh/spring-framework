@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +35,7 @@ import org.springframework.util.StringUtils;
  */
 public class SQLErrorCodes {
 
+	@Nullable
 	private String[] databaseProductNames;
 
 	private boolean useSqlStateForTranslation = false;
@@ -59,8 +60,10 @@ public class SQLErrorCodes {
 
 	private String[] cannotSerializeTransactionCodes = new String[0];
 
+	@Nullable
 	private CustomSQLErrorCodesTranslation[] customTranslations;
 
+	@Nullable
 	private SQLExceptionTranslator customSqlExceptionTranslator;
 
 
@@ -68,7 +71,7 @@ public class SQLErrorCodes {
 	 * Set this property if the database name contains spaces,
 	 * in which case we can not use the bean name for lookup.
 	 */
-	public void setDatabaseProductName(String databaseProductName) {
+	public void setDatabaseProductName(@Nullable String databaseProductName) {
 		this.databaseProductNames = new String[] {databaseProductName};
 	}
 
@@ -82,10 +85,11 @@ public class SQLErrorCodes {
 	 * Set this property to specify multiple database names that contains spaces,
 	 * in which case we can not use bean names for lookup.
 	 */
-	public void setDatabaseProductNames(String... databaseProductNames) {
+	public void setDatabaseProductNames(@Nullable String... databaseProductNames) {
 		this.databaseProductNames = databaseProductNames;
 	}
 
+	@Nullable
 	public String[] getDatabaseProductNames() {
 		return this.databaseProductNames;
 	}
@@ -119,7 +123,7 @@ public class SQLErrorCodes {
 	}
 
 	public String[] getDuplicateKeyCodes() {
-		return duplicateKeyCodes;
+		return this.duplicateKeyCodes;
 	}
 
 	public void setDuplicateKeyCodes(String... duplicateKeyCodes) {
@@ -206,7 +210,7 @@ public class SQLErrorCodes {
 		}
 	}
 
-	public void setCustomSqlExceptionTranslator(SQLExceptionTranslator customSqlExceptionTranslator) {
+	public void setCustomSqlExceptionTranslator(@Nullable SQLExceptionTranslator customSqlExceptionTranslator) {
 		this.customSqlExceptionTranslator = customSqlExceptionTranslator;
 	}
 

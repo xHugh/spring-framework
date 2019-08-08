@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,21 +48,12 @@ import org.springframework.lang.Nullable;
  */
 class StaxResult extends SAXResult {
 
+	@Nullable
 	private XMLEventWriter eventWriter;
 
+	@Nullable
 	private XMLStreamWriter streamWriter;
 
-
-	/**
-	 * Construct a new instance of the {@code StaxResult} with the specified {@code XMLStreamWriter}.
-	 * @param streamWriter the {@code XMLStreamWriter} to write to
-	 */
-	public StaxResult(XMLStreamWriter streamWriter) {
-		StaxStreamHandler handler = new StaxStreamHandler(streamWriter);
-		super.setHandler(handler);
-		super.setLexicalHandler(handler);
-		this.streamWriter = streamWriter;
-	}
 
 	/**
 	 * Construct a new instance of the {@code StaxResult} with the specified {@code XMLEventWriter}.
@@ -73,6 +64,17 @@ class StaxResult extends SAXResult {
 		super.setHandler(handler);
 		super.setLexicalHandler(handler);
 		this.eventWriter = eventWriter;
+	}
+
+	/**
+	 * Construct a new instance of the {@code StaxResult} with the specified {@code XMLStreamWriter}.
+	 * @param streamWriter the {@code XMLStreamWriter} to write to
+	 */
+	public StaxResult(XMLStreamWriter streamWriter) {
+		StaxStreamHandler handler = new StaxStreamHandler(streamWriter);
+		super.setHandler(handler);
+		super.setLexicalHandler(handler);
+		this.streamWriter = streamWriter;
 	}
 
 

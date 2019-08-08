@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,12 +27,12 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Currency;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -91,20 +91,26 @@ import org.springframework.util.ClassUtils;
  */
 public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 
+	@Nullable
 	private ConversionService conversionService;
 
 	private boolean defaultEditorsActive = false;
 
 	private boolean configValueEditorsActive = false;
 
+	@Nullable
 	private Map<Class<?>, PropertyEditor> defaultEditors;
 
+	@Nullable
 	private Map<Class<?>, PropertyEditor> overriddenDefaultEditors;
 
+	@Nullable
 	private Map<Class<?>, PropertyEditor> customEditors;
 
+	@Nullable
 	private Map<String, CustomEditorHolder> customEditorsForPath;
 
+	@Nullable
 	private Map<Class<?>, PropertyEditor> customEditorCache;
 
 
@@ -312,7 +318,7 @@ public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 				// Check property-specific editor first.
 				PropertyEditor editor = getCustomEditor(propertyPath, requiredType);
 				if (editor == null) {
-					List<String> strippedPaths = new LinkedList<>();
+					List<String> strippedPaths = new ArrayList<>();
 					addStrippedPropertyPaths(strippedPaths, "", propertyPath);
 					for (Iterator<String> it = strippedPaths.iterator(); it.hasNext() && editor == null;) {
 						String strippedPath = it.next();
@@ -343,10 +349,9 @@ public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 	public boolean hasCustomEditorForElement(@Nullable Class<?> elementType, @Nullable String propertyPath) {
 		if (propertyPath != null && this.customEditorsForPath != null) {
 			for (Map.Entry<String, CustomEditorHolder> entry : this.customEditorsForPath.entrySet()) {
-				if (PropertyAccessorUtils.matchesProperty(entry.getKey(), propertyPath)) {
-					if (entry.getValue().getPropertyEditor(elementType) != null) {
-						return true;
-					}
+				if (PropertyAccessorUtils.matchesProperty(entry.getKey(), propertyPath) &&
+						entry.getValue().getPropertyEditor(elementType) != null) {
+					return true;
 				}
 			}
 		}
@@ -378,7 +383,8 @@ public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 	 */
 	@Nullable
 	private PropertyEditor getCustomEditor(String propertyName, @Nullable Class<?> requiredType) {
-		CustomEditorHolder holder = this.customEditorsForPath.get(propertyName);
+		CustomEditorHolder holder =
+				(this.customEditorsForPath != null ? this.customEditorsForPath.get(propertyName) : null);
 		return (holder != null ? holder.getPropertyEditor(requiredType) : null);
 	}
 
@@ -432,7 +438,7 @@ public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 		if (this.customEditorsForPath != null) {
 			CustomEditorHolder editorHolder = this.customEditorsForPath.get(propertyName);
 			if (editorHolder == null) {
-				List<String> strippedPaths = new LinkedList<>();
+				List<String> strippedPaths = new ArrayList<>();
 				addStrippedPropertyPaths(strippedPaths, "", propertyName);
 				for (Iterator<String> it = strippedPaths.iterator(); it.hasNext() && editorHolder == null;) {
 					String strippedName = it.next();
@@ -460,9 +466,7 @@ public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 			this.customEditors.forEach(target::registerCustomEditor);
 		}
 		if (this.customEditorsForPath != null) {
-			for (Map.Entry<String, CustomEditorHolder> entry : this.customEditorsForPath.entrySet()) {
-				String editorPath = entry.getKey();
-				CustomEditorHolder editorHolder = entry.getValue();
+			this.customEditorsForPath.forEach((editorPath, editorHolder) -> {
 				if (nestedProperty != null) {
 					int pos = PropertyAccessorUtils.getFirstNestedPropertySeparatorIndex(editorPath);
 					if (pos != -1) {
@@ -478,7 +482,7 @@ public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 					target.registerCustomEditor(
 							editorHolder.getRegisteredType(), editorPath, editorHolder.getPropertyEditor());
 				}
-			}
+			});
 		}
 	}
 
@@ -513,10 +517,11 @@ public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 	 * Holder for a registered custom editor with property name.
 	 * Keeps the PropertyEditor itself plus the type it was registered for.
 	 */
-	private static class CustomEditorHolder {
+	private static final class CustomEditorHolder {
 
 		private final PropertyEditor propertyEditor;
 
+		@Nullable
 		private final Class<?> registeredType;
 
 		private CustomEditorHolder(PropertyEditor propertyEditor, @Nullable Class<?> registeredType) {
@@ -533,6 +538,7 @@ public class PropertyEditorRegistrySupport implements PropertyEditorRegistry {
 			return this.registeredType;
 		}
 
+		@Nullable
 		private PropertyEditor getPropertyEditor(@Nullable Class<?> requiredType) {
 			// Special case: If no required type specified, which usually only happens for
 			// Collection elements, or required type is not assignable to registered type,

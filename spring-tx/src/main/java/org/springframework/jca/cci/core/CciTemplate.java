@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -72,10 +72,13 @@ public class CciTemplate implements CciOperations {
 
 	private final Log logger = LogFactory.getLog(getClass());
 
+	@Nullable
 	private ConnectionFactory connectionFactory;
 
+	@Nullable
 	private ConnectionSpec connectionSpec;
 
+	@Nullable
 	private RecordCreator outputRecordCreator;
 
 
@@ -90,7 +93,7 @@ public class CciTemplate implements CciOperations {
 	/**
 	 * Construct a new CciTemplate, given a ConnectionFactory to obtain Connections from.
 	 * Note: This will trigger eager initialization of the exception translator.
-	 * @param connectionFactory JCA ConnectionFactory to obtain Connections from
+	 * @param connectionFactory the JCA ConnectionFactory to obtain Connections from
 	 */
 	public CciTemplate(ConnectionFactory connectionFactory) {
 		setConnectionFactory(connectionFactory);
@@ -100,13 +103,15 @@ public class CciTemplate implements CciOperations {
 	/**
 	 * Construct a new CciTemplate, given a ConnectionFactory to obtain Connections from.
 	 * Note: This will trigger eager initialization of the exception translator.
-	 * @param connectionFactory JCA ConnectionFactory to obtain Connections from
+	 * @param connectionFactory the JCA ConnectionFactory to obtain Connections from
 	 * @param connectionSpec the CCI ConnectionSpec to obtain Connections for
 	 * (may be {@code null})
 	 */
 	public CciTemplate(ConnectionFactory connectionFactory, @Nullable ConnectionSpec connectionSpec) {
 		setConnectionFactory(connectionFactory);
-		setConnectionSpec(connectionSpec);
+		if (connectionSpec != null) {
+			setConnectionSpec(connectionSpec);
+		}
 		afterPropertiesSet();
 	}
 
@@ -189,15 +194,17 @@ public class CciTemplate implements CciOperations {
 	 * @see #setConnectionSpec
 	 */
 	public CciTemplate getDerivedTemplate(ConnectionSpec connectionSpec) {
-		CciTemplate derived = new CciTemplate();
-		derived.setConnectionFactory(getConnectionFactory());
-		derived.setConnectionSpec(connectionSpec);
-		derived.setOutputRecordCreator(getOutputRecordCreator());
+		CciTemplate derived = new CciTemplate(obtainConnectionFactory(), connectionSpec);
+		RecordCreator recordCreator = getOutputRecordCreator();
+		if (recordCreator != null) {
+			derived.setOutputRecordCreator(recordCreator);
+		}
 		return derived;
 	}
 
 
 	@Override
+	@Nullable
 	public <T> T execute(ConnectionCallback<T> action) throws DataAccessException {
 		Assert.notNull(action, "Callback object must not be null");
 		ConnectionFactory connectionFactory = obtainConnectionFactory();
@@ -220,6 +227,7 @@ public class CciTemplate implements CciOperations {
 	}
 
 	@Override
+	@Nullable
 	public <T> T execute(final InteractionCallback<T> action) throws DataAccessException {
 		Assert.notNull(action, "Callback object must not be null");
 		return execute((ConnectionCallback<T>) (connection, connectionFactory) -> {
@@ -234,6 +242,7 @@ public class CciTemplate implements CciOperations {
 	}
 
 	@Override
+	@Nullable
 	public Record execute(InteractionSpec spec, Record inputRecord) throws DataAccessException {
 		return doExecute(spec, inputRecord, null, new SimpleRecordExtractor());
 	}

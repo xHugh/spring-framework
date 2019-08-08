@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,10 +43,13 @@ import org.springframework.util.Assert;
 @SuppressWarnings("serial")
 public abstract class AbstractBeanFactoryPointcutAdvisor extends AbstractPointcutAdvisor implements BeanFactoryAware {
 
+	@Nullable
 	private String adviceBeanName;
 
+	@Nullable
 	private BeanFactory beanFactory;
 
+	@Nullable
 	private transient volatile Advice advice;
 
 	private transient volatile Object adviceMonitor = new Object();
@@ -60,7 +63,7 @@ public abstract class AbstractBeanFactoryPointcutAdvisor extends AbstractPointcu
 	 * of the advisor.
 	 * @see #getAdvice()
 	 */
-	public void setAdviceBeanName(String adviceBeanName) {
+	public void setAdviceBeanName(@Nullable String adviceBeanName) {
 		this.adviceBeanName = adviceBeanName;
 	}
 
@@ -119,10 +122,12 @@ public abstract class AbstractBeanFactoryPointcutAdvisor extends AbstractPointcu
 			// reuse the factory's singleton lock, just in case a lazy dependency
 			// of our advice bean happens to trigger the singleton lock implicitly...
 			synchronized (this.adviceMonitor) {
-				if (this.advice == null) {
-					this.advice = this.beanFactory.getBean(this.adviceBeanName, Advice.class);
+				advice = this.advice;
+				if (advice == null) {
+					advice = this.beanFactory.getBean(this.adviceBeanName, Advice.class);
+					this.advice = advice;
 				}
-				return this.advice;
+				return advice;
 			}
 		}
 	}

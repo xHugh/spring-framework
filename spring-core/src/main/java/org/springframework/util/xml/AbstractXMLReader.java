@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,19 +41,24 @@ import org.springframework.lang.Nullable;
  */
 abstract class AbstractXMLReader implements XMLReader {
 
+	@Nullable
 	private DTDHandler dtdHandler;
 
+	@Nullable
 	private ContentHandler contentHandler;
 
+	@Nullable
 	private EntityResolver entityResolver;
 
+	@Nullable
 	private ErrorHandler errorHandler;
 
+	@Nullable
 	private LexicalHandler lexicalHandler;
 
 
 	@Override
-	public void setContentHandler(ContentHandler contentHandler) {
+	public void setContentHandler(@Nullable ContentHandler contentHandler) {
 		this.contentHandler = contentHandler;
 	}
 
@@ -64,7 +69,7 @@ abstract class AbstractXMLReader implements XMLReader {
 	}
 
 	@Override
-	public void setDTDHandler(DTDHandler dtdHandler) {
+	public void setDTDHandler(@Nullable DTDHandler dtdHandler) {
 		this.dtdHandler = dtdHandler;
 	}
 
@@ -75,7 +80,7 @@ abstract class AbstractXMLReader implements XMLReader {
 	}
 
 	@Override
-	public void setEntityResolver(EntityResolver entityResolver) {
+	public void setEntityResolver(@Nullable EntityResolver entityResolver) {
 		this.entityResolver = entityResolver;
 	}
 
@@ -86,7 +91,7 @@ abstract class AbstractXMLReader implements XMLReader {
 	}
 
 	@Override
-	public void setErrorHandler(ErrorHandler errorHandler) {
+	public void setErrorHandler(@Nullable ErrorHandler errorHandler) {
 		this.errorHandler = errorHandler;
 	}
 
@@ -139,6 +144,7 @@ abstract class AbstractXMLReader implements XMLReader {
 	 * handler. The property name for a lexical handler is {@code http://xml.org/sax/properties/lexical-handler}.
 	 */
 	@Override
+	@Nullable
 	public Object getProperty(String name) throws SAXNotRecognizedException, SAXNotSupportedException {
 		if ("http://xml.org/sax/properties/lexical-handler".equals(name)) {
 			return this.lexicalHandler;

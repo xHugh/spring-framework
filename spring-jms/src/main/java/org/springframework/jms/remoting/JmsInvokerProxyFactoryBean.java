@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.jms.remoting;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
@@ -44,10 +45,13 @@ import org.springframework.util.ClassUtils;
 public class JmsInvokerProxyFactoryBean extends JmsInvokerClientInterceptor
 		implements FactoryBean<Object>, BeanClassLoaderAware {
 
+	@Nullable
 	private Class<?> serviceInterface;
 
+	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
+	@Nullable
 	private Object serviceProxy;
 
 
@@ -59,9 +63,7 @@ public class JmsInvokerProxyFactoryBean extends JmsInvokerClientInterceptor
 	 */
 	public void setServiceInterface(Class<?> serviceInterface) {
 		Assert.notNull(serviceInterface, "'serviceInterface' must not be null");
-		if (!serviceInterface.isInterface()) {
-			throw new IllegalArgumentException("'serviceInterface' must be an interface");
-		}
+		Assert.isTrue(serviceInterface.isInterface(), "'serviceInterface' must be an interface");
 		this.serviceInterface = serviceInterface;
 	}
 
@@ -73,14 +75,13 @@ public class JmsInvokerProxyFactoryBean extends JmsInvokerClientInterceptor
 	@Override
 	public void afterPropertiesSet() {
 		super.afterPropertiesSet();
-		if (this.serviceInterface == null) {
-			throw new IllegalArgumentException("Property 'serviceInterface' is required");
-		}
+		Assert.notNull(this.serviceInterface, "Property 'serviceInterface' is required");
 		this.serviceProxy = new ProxyFactory(this.serviceInterface, this).getProxy(this.beanClassLoader);
 	}
 
 
 	@Override
+	@Nullable
 	public Object getObject() {
 		return this.serviceProxy;
 	}

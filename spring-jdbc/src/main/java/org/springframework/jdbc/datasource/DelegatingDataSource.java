@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -40,6 +40,7 @@ import org.springframework.util.Assert;
  */
 public class DelegatingDataSource implements DataSource, InitializingBean {
 
+	@Nullable
 	private DataSource targetDataSource;
 
 
@@ -62,8 +63,7 @@ public class DelegatingDataSource implements DataSource, InitializingBean {
 	/**
 	 * Set the target DataSource that this DataSource should delegate to.
 	 */
-	public void setTargetDataSource(DataSource targetDataSource) {
-		Assert.notNull(targetDataSource, "'targetDataSource' must not be null");
+	public void setTargetDataSource(@Nullable DataSource targetDataSource) {
 		this.targetDataSource = targetDataSource;
 	}
 

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,18 +38,18 @@ import org.springframework.util.CollectionUtils;
  * {@link EntityResolver} implementation that attempts to resolve schema URLs into
  * local {@link ClassPathResource classpath resources} using a set of mappings files.
  *
- * <p>By default, this class will look for mapping files in the classpath using the pattern:
- * {@code META-INF/spring.schemas} allowing for multiple files to exist on the
- * classpath at any one time.
+ * <p>By default, this class will look for mapping files in the classpath using the
+ * pattern: {@code META-INF/spring.schemas} allowing for multiple files to exist on
+ * the classpath at any one time.
  *
- * The format of {@code META-INF/spring.schemas} is a properties
- * file where each line should be of the form {@code systemId=schema-location}
- * where {@code schema-location} should also be a schema file in the classpath.
- * Since systemId is commonly a URL, one must be careful to escape any ':' characters
- * which are treated as delimiters in properties files.
+ * <p>The format of {@code META-INF/spring.schemas} is a properties file where each line
+ * should be of the form {@code systemId=schema-location} where {@code schema-location}
+ * should also be a schema file in the classpath. Since {@code systemId} is commonly a
+ * URL, one must be careful to escape any ':' characters which are treated as delimiters
+ * in properties files.
  *
- * <p>The pattern for the mapping files can be overidden using the
- * {@link #PluggableSchemaResolver(ClassLoader, String)} constructor
+ * <p>The pattern for the mapping files can be overridden using the
+ * {@link #PluggableSchemaResolver(ClassLoader, String)} constructor.
  *
  * @author Rob Harrop
  * @author Juergen Hoeller
@@ -66,11 +66,13 @@ public class PluggableSchemaResolver implements EntityResolver {
 
 	private static final Log logger = LogFactory.getLog(PluggableSchemaResolver.class);
 
+	@Nullable
 	private final ClassLoader classLoader;
 
 	private final String schemaMappingsLocation;
 
-	/** Stores the mapping of schema URL -> local schema path */
+	/** Stores the mapping of schema URL -> local schema path. */
+	@Nullable
 	private volatile Map<String, String> schemaMappings;
 
 
@@ -101,9 +103,10 @@ public class PluggableSchemaResolver implements EntityResolver {
 		this.schemaMappingsLocation = schemaMappingsLocation;
 	}
 
+
 	@Override
 	@Nullable
-	public InputSource resolveEntity(String publicId, @Nullable String systemId) throws IOException {
+	public InputSource resolveEntity(@Nullable String publicId, @Nullable String systemId) throws IOException {
 		if (logger.isTraceEnabled()) {
 			logger.trace("Trying to resolve XML entity with public id [" + publicId +
 					"] and system id [" + systemId + "]");
@@ -111,24 +114,30 @@ public class PluggableSchemaResolver implements EntityResolver {
 
 		if (systemId != null) {
 			String resourceLocation = getSchemaMappings().get(systemId);
+			if (resourceLocation == null && systemId.startsWith("https:")) {
+				// Retrieve canonical http schema mapping even for https declaration
+				resourceLocation = getSchemaMappings().get("http:" + systemId.substring(6));
+			}
 			if (resourceLocation != null) {
 				Resource resource = new ClassPathResource(resourceLocation, this.classLoader);
 				try {
 					InputSource source = new InputSource(resource.getInputStream());
 					source.setPublicId(publicId);
 					source.setSystemId(systemId);
-					if (logger.isDebugEnabled()) {
-						logger.debug("Found XML schema [" + systemId + "] in classpath: " + resourceLocation);
+					if (logger.isTraceEnabled()) {
+						logger.trace("Found XML schema [" + systemId + "] in classpath: " + resourceLocation);
 					}
 					return source;
 				}
 				catch (FileNotFoundException ex) {
 					if (logger.isDebugEnabled()) {
-						logger.debug("Couldn't find XML schema [" + systemId + "]: " + resource, ex);
+						logger.debug("Could not find XML schema [" + systemId + "]: " + resource, ex);
 					}
 				}
 			}
 		}
+
+		// Fall back to the parser's default behavior.
 		return null;
 	}
 
@@ -136,19 +145,21 @@ public class PluggableSchemaResolver implements EntityResolver {
 	 * Load the specified schema mappings lazily.
 	 */
 	private Map<String, String> getSchemaMappings() {
-		if (this.schemaMappings == null) {
+		Map<String, String> schemaMappings = this.schemaMappings;
+		if (schemaMappings == null) {
 			synchronized (this) {
-				if (this.schemaMappings == null) {
-					if (logger.isDebugEnabled()) {
-						logger.debug("Loading schema mappings from [" + this.schemaMappingsLocation + "]");
+				schemaMappings = this.schemaMappings;
+				if (schemaMappings == null) {
+					if (logger.isTraceEnabled()) {
+						logger.trace("Loading schema mappings from [" + this.schemaMappingsLocation + "]");
 					}
 					try {
 						Properties mappings =
 								PropertiesLoaderUtils.loadAllProperties(this.schemaMappingsLocation, this.classLoader);
-						if (logger.isDebugEnabled()) {
-							logger.debug("Loaded schema mappings: " + mappings);
+						if (logger.isTraceEnabled()) {
+							logger.trace("Loaded schema mappings: " + mappings);
 						}
-						Map<String, String> schemaMappings = new ConcurrentHashMap<>(mappings.size());
+						schemaMappings = new ConcurrentHashMap<>(mappings.size());
 						CollectionUtils.mergePropertiesIntoMap(mappings, schemaMappings);
 						this.schemaMappings = schemaMappings;
 					}
@@ -159,13 +170,13 @@ public class PluggableSchemaResolver implements EntityResolver {
 				}
 			}
 		}
-		return this.schemaMappings;
+		return schemaMappings;
 	}
 
 
 	@Override
 	public String toString() {
-		return "EntityResolver using mappings " + getSchemaMappings();
+		return "EntityResolver using schema mappings " + getSchemaMappings();
 	}
 
 }

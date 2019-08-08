@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -55,7 +55,7 @@ public class BeanFactoryAspectInstanceFactory implements MetadataAwareAspectInst
 	 * Create a BeanFactoryAspectInstanceFactory. AspectJ will be called to
 	 * introspect to create AJType metadata using the type returned for the
 	 * given bean name from the BeanFactory.
-	 * @param beanFactory BeanFactory to obtain instance(s) from
+	 * @param beanFactory the BeanFactory to obtain instance(s) from
 	 * @param name name of the bean
 	 */
 	public BeanFactoryAspectInstanceFactory(BeanFactory beanFactory, String name) {
@@ -66,7 +66,7 @@ public class BeanFactoryAspectInstanceFactory implements MetadataAwareAspectInst
 	 * Create a BeanFactoryAspectInstanceFactory, providing a type that AspectJ should
 	 * introspect to create AJType metadata. Use if the BeanFactory may consider the type
 	 * to be a subclass (as when using CGLIB), and the information should relate to a superclass.
-	 * @param beanFactory BeanFactory to obtain instance(s) from
+	 * @param beanFactory the BeanFactory to obtain instance(s) from
 	 * @param name the name of the bean
 	 * @param type the type that should be introspected by AspectJ
 	 * ({@code null} indicates resolution through {@link BeanFactory#getType} via the bean name)
@@ -91,6 +91,7 @@ public class BeanFactoryAspectInstanceFactory implements MetadataAwareAspectInst
 	}
 
 	@Override
+	@Nullable
 	public ClassLoader getAspectClassLoader() {
 		return (this.beanFactory instanceof ConfigurableBeanFactory ?
 				((ConfigurableBeanFactory) this.beanFactory).getBeanClassLoader() :
@@ -103,20 +104,21 @@ public class BeanFactoryAspectInstanceFactory implements MetadataAwareAspectInst
 	}
 
 	@Override
+	@Nullable
 	public Object getAspectCreationMutex() {
-		if (this.beanFactory != null) {
-			if (this.beanFactory.isSingleton(name)) {
-				// Rely on singleton semantics provided by the factory -> no local lock.
-				return null;
-			}
-			else if (this.beanFactory instanceof ConfigurableBeanFactory) {
-				// No singleton guarantees from the factory -> let's lock locally but
-				// reuse the factory's singleton lock, just in case a lazy dependency
-				// of our advice bean happens to trigger the singleton lock implicitly...
-				return ((ConfigurableBeanFactory) this.beanFactory).getSingletonMutex();
-			}
+		if (this.beanFactory.isSingleton(this.name)) {
+			// Rely on singleton semantics provided by the factory -> no local lock.
+			return null;
 		}
-		return this;
+		else if (this.beanFactory instanceof ConfigurableBeanFactory) {
+			// No singleton guarantees from the factory -> let's lock locally but
+			// reuse the factory's singleton lock, just in case a lazy dependency
+			// of our advice bean happens to trigger the singleton lock implicitly...
+			return ((ConfigurableBeanFactory) this.beanFactory).getSingletonMutex();
+		}
+		else {
+			return this;
+		}
 	}
 
 	/**

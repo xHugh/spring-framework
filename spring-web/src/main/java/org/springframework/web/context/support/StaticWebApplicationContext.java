@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,9 +24,11 @@ import org.springframework.context.support.StaticApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
+import org.springframework.lang.Nullable;
 import org.springframework.ui.context.Theme;
 import org.springframework.ui.context.ThemeSource;
 import org.springframework.ui.context.support.UiApplicationContextUtils;
+import org.springframework.util.Assert;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.ServletConfigAware;
 import org.springframework.web.context.ServletContextAware;
@@ -56,12 +58,16 @@ import org.springframework.web.context.ServletContextAware;
 public class StaticWebApplicationContext extends StaticApplicationContext
 		implements ConfigurableWebApplicationContext, ThemeSource {
 
+	@Nullable
 	private ServletContext servletContext;
 
+	@Nullable
 	private ServletConfig servletConfig;
 
+	@Nullable
 	private String namespace;
 
+	@Nullable
 	private ThemeSource themeSource;
 
 
@@ -74,35 +80,40 @@ public class StaticWebApplicationContext extends StaticApplicationContext
 	 * Set the ServletContext that this WebApplicationContext runs in.
 	 */
 	@Override
-	public void setServletContext(ServletContext servletContext) {
+	public void setServletContext(@Nullable ServletContext servletContext) {
 		this.servletContext = servletContext;
 	}
 
 	@Override
+	@Nullable
 	public ServletContext getServletContext() {
 		return this.servletContext;
 	}
 
 	@Override
-	public void setServletConfig(ServletConfig servletConfig) {
+	public void setServletConfig(@Nullable ServletConfig servletConfig) {
 		this.servletConfig = servletConfig;
-		if (this.servletContext == null) {
+		if (servletConfig != null && this.servletContext == null) {
 			this.servletContext = servletConfig.getServletContext();
 		}
 	}
 
 	@Override
+	@Nullable
 	public ServletConfig getServletConfig() {
 		return this.servletConfig;
 	}
 
 	@Override
-	public void setNamespace(String namespace) {
+	public void setNamespace(@Nullable String namespace) {
 		this.namespace = namespace;
-		setDisplayName("WebApplicationContext for namespace '" + namespace + "'");
+		if (namespace != null) {
+			setDisplayName("WebApplicationContext for namespace '" + namespace + "'");
+		}
 	}
 
 	@Override
+	@Nullable
 	public String getNamespace() {
 		return this.namespace;
 	}
@@ -150,6 +161,7 @@ public class StaticWebApplicationContext extends StaticApplicationContext
 	 */
 	@Override
 	protected Resource getResourceByPath(String path) {
+		Assert.state(this.servletContext != null, "No ServletContext available");
 		return new ServletContextResource(this.servletContext, path);
 	}
 
@@ -185,7 +197,9 @@ public class StaticWebApplicationContext extends StaticApplicationContext
 	}
 
 	@Override
+	@Nullable
 	public Theme getTheme(String themeName) {
+		Assert.state(this.themeSource != null, "No ThemeSource available");
 		return this.themeSource.getTheme(themeName);
 	}
 

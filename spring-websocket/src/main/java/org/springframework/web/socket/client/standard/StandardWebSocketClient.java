@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -62,6 +62,7 @@ public class StandardWebSocketClient extends AbstractWebSocketClient {
 
 	private final Map<String,Object> userProperties = new HashMap<>();
 
+	@Nullable
 	private AsyncListenableTaskExecutor taskExecutor = new SimpleAsyncTaskExecutor();
 
 
@@ -107,7 +108,7 @@ public class StandardWebSocketClient extends AbstractWebSocketClient {
 
 	/**
 	 * Set an {@link AsyncListenableTaskExecutor} to use when opening connections.
-	 * If this property is set to {@code null}, calls to  any of the
+	 * If this property is set to {@code null}, calls to any of the
 	 * {@code doHandshake} methods will block until the connection is established.
 	 * <p>By default, an instance of {@code SimpleAsyncTaskExecutor} is used.
 	 */
@@ -118,6 +119,7 @@ public class StandardWebSocketClient extends AbstractWebSocketClient {
 	/**
 	 * Return the configured {@link TaskExecutor}.
 	 */
+	@Nullable
 	public AsyncListenableTaskExecutor getTaskExecutor() {
 		return this.taskExecutor;
 	}
@@ -145,7 +147,7 @@ public class StandardWebSocketClient extends AbstractWebSocketClient {
 		final Endpoint endpoint = new StandardWebSocketHandlerAdapter(webSocketHandler, session);
 
 		Callable<WebSocketSession> connectTask = () -> {
-			webSocketContainer.connectToServer(endpoint, endpointConfig, uri);
+			this.webSocketContainer.connectToServer(endpoint, endpointConfig, uri);
 			return session;
 		};
 
@@ -178,8 +180,8 @@ public class StandardWebSocketClient extends AbstractWebSocketClient {
 
 	private int getPort(URI uri) {
 		if (uri.getPort() == -1) {
-	        String scheme = uri.getScheme().toLowerCase(Locale.ENGLISH);
-	        return ("wss".equals(scheme) ? 443 : 80);
+			String scheme = uri.getScheme().toLowerCase(Locale.ENGLISH);
+			return ("wss".equals(scheme) ? 443 : 80);
 		}
 		return uri.getPort();
 	}

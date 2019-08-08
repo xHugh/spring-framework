@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,6 +37,7 @@ public class FieldError extends ObjectError {
 
 	private final String field;
 
+	@Nullable
 	private final Object rejectedValue;
 
 	private final boolean bindingFailure;
@@ -84,6 +85,7 @@ public class FieldError extends ObjectError {
 	/**
 	 * Return the rejected field value.
 	 */
+	@Nullable
 	public Object getRejectedValue() {
 		return this.rejectedValue;
 	}
@@ -96,12 +98,6 @@ public class FieldError extends ObjectError {
 		return this.bindingFailure;
 	}
 
-
-	@Override
-	public String toString() {
-		return "Field error in object '" + getObjectName() + "' on field '" + this.field +
-				"': rejected value [" + this.rejectedValue + "]; " + resolvableToString();
-	}
 
 	@Override
 	public boolean equals(@Nullable Object other) {
@@ -124,6 +120,13 @@ public class FieldError extends ObjectError {
 		hashCode = 29 * hashCode + ObjectUtils.nullSafeHashCode(getRejectedValue());
 		hashCode = 29 * hashCode + (isBindingFailure() ? 1 : 0);
 		return hashCode;
+	}
+
+	@Override
+	public String toString() {
+		return "Field error in object '" + getObjectName() + "' on field '" + this.field +
+				"': rejected value [" + ObjectUtils.nullSafeToString(this.rejectedValue) + "]; " +
+				resolvableToString();
 	}
 
 }

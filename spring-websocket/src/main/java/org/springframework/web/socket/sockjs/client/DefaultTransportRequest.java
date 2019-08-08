@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -61,14 +61,17 @@ class DefaultTransportRequest implements TransportRequest {
 
 	private SockJsMessageCodec codec;
 
+	@Nullable
 	private Principal user;
 
 	private long timeoutValue;
 
+	@Nullable
 	private TaskScheduler timeoutScheduler;
 
 	private final List<Runnable> timeoutTasks = new ArrayList<>();
 
+	@Nullable
 	private DefaultTransportRequest fallbackRequest;
 
 
@@ -114,6 +117,7 @@ class DefaultTransportRequest implements TransportRequest {
 	}
 
 	@Override
+	@Nullable
 	public Principal getUser() {
 		return this.user;
 	}
@@ -191,7 +195,7 @@ class DefaultTransportRequest implements TransportRequest {
 		}
 
 		@Override
-		public void onSuccess(WebSocketSession session) {
+		public void onSuccess(@Nullable WebSocketSession session) {
 			if (this.handled.compareAndSet(false, true)) {
 				this.future.set(session);
 			}
@@ -222,9 +226,7 @@ class DefaultTransportRequest implements TransportRequest {
 					fallbackRequest.connect(this.handler, this.future);
 				}
 				else {
-					if (logger.isErrorEnabled()) {
-						logger.error("No more fallback transports after " + DefaultTransportRequest.this, ex);
-					}
+					logger.error("No more fallback transports after " + DefaultTransportRequest.this, ex);
 					if (ex != null) {
 						this.future.setException(ex);
 					}

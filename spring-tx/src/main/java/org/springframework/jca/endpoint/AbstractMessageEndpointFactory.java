@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,6 +33,7 @@ import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.lang.Nullable;
 import org.springframework.transaction.jta.SimpleTransactionFactory;
 import org.springframework.transaction.jta.TransactionFactory;
+import org.springframework.util.Assert;
 
 /**
  * Abstract base implementation of the JCA 1.7
@@ -46,15 +47,18 @@ import org.springframework.transaction.jta.TransactionFactory;
  */
 public abstract class AbstractMessageEndpointFactory implements MessageEndpointFactory, BeanNameAware {
 
-	/** Logger available to subclasses */
+	/** Logger available to subclasses. */
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	@Nullable
 	private TransactionFactory transactionFactory;
 
+	@Nullable
 	private String transactionName;
 
 	private int transactionTimeout = -1;
 
+	@Nullable
 	private String beanName;
 
 
@@ -201,10 +205,12 @@ public abstract class AbstractMessageEndpointFactory implements MessageEndpointF
 	 */
 	protected abstract class AbstractMessageEndpoint implements MessageEndpoint {
 
+		@Nullable
 		private TransactionDelegate transactionDelegate;
 
 		private boolean beforeDeliveryCalled = false;
 
+		@Nullable
 		private ClassLoader previousContextClassLoader;
 
 		/**
@@ -228,6 +234,7 @@ public abstract class AbstractMessageEndpointFactory implements MessageEndpointF
 		@Override
 		public void beforeDelivery(@Nullable Method method) throws ResourceException {
 			this.beforeDeliveryCalled = true;
+			Assert.state(this.transactionDelegate != null, "Not initialized");
 			try {
 				this.transactionDelegate.beginTransaction();
 			}
@@ -262,8 +269,10 @@ public abstract class AbstractMessageEndpointFactory implements MessageEndpointF
 		 * endpoint throwing an exception.
 		 * @param ex the exception thrown from the concrete endpoint
 		 */
-		protected final void onEndpointException(Throwable ex) {
+		protected void onEndpointException(Throwable ex) {
+			Assert.state(this.transactionDelegate != null, "Not initialized");
 			this.transactionDelegate.setRollbackOnly();
+			logger.debug("Transaction marked as rollback-only after endpoint exception", ex);
 		}
 
 		/**
@@ -275,6 +284,7 @@ public abstract class AbstractMessageEndpointFactory implements MessageEndpointF
 		 */
 		@Override
 		public void afterDelivery() throws ResourceException {
+			Assert.state(this.transactionDelegate != null, "Not initialized");
 			this.beforeDeliveryCalled = false;
 			Thread.currentThread().setContextClassLoader(this.previousContextClassLoader);
 			this.previousContextClassLoader = null;
@@ -282,18 +292,21 @@ public abstract class AbstractMessageEndpointFactory implements MessageEndpointF
 				this.transactionDelegate.endTransaction();
 			}
 			catch (Throwable ex) {
+				logger.warn("Failed to complete transaction after endpoint delivery", ex);
 				throw new ApplicationServerInternalException("Failed to complete transaction", ex);
 			}
 		}
 
 		@Override
 		public void release() {
-			try {
-				this.transactionDelegate.setRollbackOnly();
-				this.transactionDelegate.endTransaction();
-			}
-			catch (Throwable ex) {
-				logger.error("Could not complete unfinished transaction on endpoint release", ex);
+			if (this.transactionDelegate != null) {
+				try {
+					this.transactionDelegate.setRollbackOnly();
+					this.transactionDelegate.endTransaction();
+				}
+				catch (Throwable ex) {
+					logger.warn("Could not complete unfinished transaction on endpoint release", ex);
+				}
 			}
 		}
 	}
@@ -305,18 +318,19 @@ public abstract class AbstractMessageEndpointFactory implements MessageEndpointF
 	 */
 	private class TransactionDelegate {
 
+		@Nullable
 		private final XAResource xaResource;
 
+		@Nullable
 		private Transaction transaction;
 
 		private boolean rollbackOnly;
 
 		public TransactionDelegate(@Nullable XAResource xaResource) {
-			if (xaResource == null) {
-				if (transactionFactory != null && !transactionFactory.supportsResourceAdapterManagedTransactions()) {
-					throw new IllegalStateException("ResourceAdapter-provided XAResource is required for " +
-							"transaction management. Check your ResourceAdapter's configuration.");
-				}
+			if (xaResource == null && transactionFactory != null &&
+					!transactionFactory.supportsResourceAdapterManagedTransactions()) {
+				throw new IllegalStateException("ResourceAdapter-provided XAResource is required for " +
+						"transaction management. Check your ResourceAdapter's configuration.");
 			}
 			this.xaResource = xaResource;
 		}

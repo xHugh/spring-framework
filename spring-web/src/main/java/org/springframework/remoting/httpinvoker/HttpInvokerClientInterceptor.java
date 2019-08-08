@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -73,8 +73,10 @@ import org.springframework.remoting.support.RemoteInvocationResult;
 public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 		implements MethodInterceptor, HttpInvokerClientConfiguration {
 
+	@Nullable
 	private String codebaseUrl;
 
+	@Nullable
 	private HttpInvokerRequestExecutor httpInvokerRequestExecutor;
 
 
@@ -90,7 +92,7 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 	 * @see org.springframework.remoting.rmi.CodebaseAwareObjectInputStream
 	 * @see java.rmi.server.RMIClassLoader
 	 */
-	public void setCodebaseUrl(String codebaseUrl) {
+	public void setCodebaseUrl(@Nullable String codebaseUrl) {
 		this.codebaseUrl = codebaseUrl;
 	}
 
@@ -98,6 +100,7 @@ public class HttpInvokerClientInterceptor extends RemoteInvocationBasedAccessor
 	 * Return the codebase URL to download classes from if not found locally.
 	 */
 	@Override
+	@Nullable
 	public String getCodebaseUrl() {
 		return this.codebaseUrl;
 	}

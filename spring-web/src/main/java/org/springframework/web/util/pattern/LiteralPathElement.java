@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,6 +16,9 @@
 
 package org.springframework.web.util.pattern;
 
+import org.springframework.http.server.PathContainer;
+import org.springframework.http.server.PathContainer.Element;
+import org.springframework.http.server.PathContainer.PathSegment;
 import org.springframework.web.util.pattern.PathPattern.MatchingContext;
 
 /**
@@ -32,6 +35,7 @@ class LiteralPathElement extends PathElement {
 
 	private boolean caseSensitive;
 
+
 	public LiteralPathElement(int pos, char[] literalText, boolean caseSensitive, char separator) {
 		super(pos, separator);
 		this.len = literalText.length;
@@ -42,65 +46,75 @@ class LiteralPathElement extends PathElement {
 		else {
 			// Force all the text lower case to make matching faster
 			this.text = new char[literalText.length];
-			for (int i = 0; i < len; i++) {
+			for (int i = 0; i < this.len; i++) {
 				this.text[i] = Character.toLowerCase(literalText[i]);
 			}
 		}
 	}
 
+
 	@Override
-	public boolean matches(int candidateIndex, MatchingContext matchingContext) {
-		if ((candidateIndex + text.length) > matchingContext.candidateLength) {
-			return false;  // not enough data, cannot be a match
+	public boolean matches(int pathIndex, MatchingContext matchingContext) {
+		if (pathIndex >= matchingContext.pathLength) {
+			// no more path left to match this element
+			return false;
+		}
+		Element element = matchingContext.pathElements.get(pathIndex);
+		if (!(element instanceof PathContainer.PathSegment)) {
+			return false;
+		}
+		String value = ((PathSegment)element).valueToMatch();
+		if (value.length() != this.len) {
+			// Not enough data to match this path element
+			return false;
 		}
 
+		char[] data = ((PathContainer.PathSegment)element).valueToMatchAsChars();
 		if (this.caseSensitive) {
-			for (int i = 0; i < len; i++) {
-				if (matchingContext.candidate[candidateIndex++] != this.text[i]) {
-					// TODO unfortunate performance hit here on comparison when encoded data is the less likely case
-					if (i < 3 || matchingContext.candidate[candidateIndex-3] != '%' ||
-							Character.toUpperCase(matchingContext.candidate[candidateIndex-1]) != this.text[i]) {
-						return false;
-					}
+			for (int i = 0; i < this.len; i++) {
+				if (data[i] != this.text[i]) {
+					return false;
 				}
 			}
 		}
 		else {
-			for (int i = 0; i < len; i++) {
+			for (int i = 0; i < this.len; i++) {
 				// TODO revisit performance if doing a lot of case insensitive matching
-				if (Character.toLowerCase(matchingContext.candidate[candidateIndex++]) != this.text[i]) {
+				if (Character.toLowerCase(data[i]) != this.text[i]) {
 					return false;
 				}
 			}
 		}
 
-		if (this.next == null) {
-			if (matchingContext.determineRemainingPath && nextIfExistsIsSeparator(candidateIndex, matchingContext)) {
-				matchingContext.remainingPathIndex = candidateIndex;
+		pathIndex++;
+		if (isNoMorePattern()) {
+			if (matchingContext.determineRemainingPath) {
+				matchingContext.remainingPathIndex = pathIndex;
 				return true;
 			}
 			else {
-				if (candidateIndex == matchingContext.candidateLength) {
+				if (pathIndex == matchingContext.pathLength) {
 					return true;
 				}
 				else {
-					return (matchingContext.isAllowOptionalTrailingSlash() &&
-							(candidateIndex + 1) == matchingContext.candidateLength &&
-							matchingContext.candidate[candidateIndex] == separator);
+					return (matchingContext.isMatchOptionalTrailingSeparator() &&
+							(pathIndex + 1) == matchingContext.pathLength &&
+							matchingContext.isSeparator(pathIndex));
 				}
 			}
 		}
 		else {
-			if (matchingContext.isMatchStartMatching && candidateIndex == matchingContext.candidateLength) {
-				return true;  // no more data but everything matched so far
-			}
-			return this.next.matches(candidateIndex, matchingContext);
+			return (this.next != null && this.next.matches(pathIndex, matchingContext));
 		}
 	}
 
 	@Override
 	public int getNormalizedLength() {
-		return len;
+		return this.len;
+	}
+
+	public char[] getChars() {
+		return this.text;
 	}
 
 

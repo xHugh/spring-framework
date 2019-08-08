@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -57,17 +57,20 @@ import org.springframework.util.Assert;
 public abstract class AbstractAdaptableMessageListener
 		implements MessageListener, SessionAwareMessageListener<Message> {
 
-	/** Logger available to subclasses */
+	/** Logger available to subclasses. */
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	@Nullable
 	private Object defaultResponseDestination;
 
 	private DestinationResolver destinationResolver = new DynamicDestinationResolver();
 
+	@Nullable
 	private MessageConverter messageConverter = new SimpleMessageConverter();
 
 	private final MessagingMessageConverterAdapter messagingMessageConverter = new MessagingMessageConverterAdapter();
 
+	@Nullable
 	private QosSettings responseQosSettings;
 
 
@@ -140,7 +143,7 @@ public abstract class AbstractAdaptableMessageListener
 	 * {@link javax.jms.TextMessage TextMessages} and
 	 * {@link javax.jms.ObjectMessage ObjectMessages}.
 	 */
-	public void setMessageConverter(MessageConverter messageConverter) {
+	public void setMessageConverter(@Nullable MessageConverter messageConverter) {
 		this.messageConverter = messageConverter;
 	}
 
@@ -186,6 +189,7 @@ public abstract class AbstractAdaptableMessageListener
 	/**
 	 * Return the {@link QosSettings} to use when sending a response,
 	 * or {@code null} if the defaults should be used.
+	 * @since 5.0
 	 */
 	@Nullable
 	protected QosSettings getResponseQosSettings() {
@@ -504,8 +508,10 @@ public abstract class AbstractAdaptableMessageListener
 
 			private final javax.jms.Message message;
 
+			@Nullable
 			private Object payload;
 
+			@Nullable
 			private MessageHeaders headers;
 
 			public LazyResolutionMessage(javax.jms.Message message) {

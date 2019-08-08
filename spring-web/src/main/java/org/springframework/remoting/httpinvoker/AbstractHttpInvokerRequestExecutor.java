@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,6 +33,7 @@ import org.springframework.remoting.rmi.CodebaseAwareObjectInputStream;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationResult;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * Abstract base implementation of the HttpInvokerRequestExecutor interface.
@@ -47,7 +48,7 @@ import org.springframework.util.Assert;
 public abstract class AbstractHttpInvokerRequestExecutor implements HttpInvokerRequestExecutor, BeanClassLoaderAware {
 
 	/**
-	 * Default content type: "application/x-java-serialized-object"
+	 * Default content type: "application/x-java-serialized-object".
 	 */
 	public static final String CONTENT_TYPE_SERIALIZED_OBJECT = "application/x-java-serialized-object";
 
@@ -75,6 +76,7 @@ public abstract class AbstractHttpInvokerRequestExecutor implements HttpInvokerR
 
 	private boolean acceptGzipEncoding = true;
 
+	@Nullable
 	private ClassLoader beanClassLoader;
 
 
@@ -120,6 +122,7 @@ public abstract class AbstractHttpInvokerRequestExecutor implements HttpInvokerR
 	/**
 	 * Return the bean ClassLoader that this executor is supposed to use.
 	 */
+	@Nullable
 	protected ClassLoader getBeanClassLoader() {
 		return this.beanClassLoader;
 	}
@@ -291,7 +294,7 @@ public abstract class AbstractHttpInvokerRequestExecutor implements HttpInvokerR
 		Object obj = ois.readObject();
 		if (!(obj instanceof RemoteInvocationResult)) {
 			throw new RemoteException("Deserialized object needs to be assignable to type [" +
-					RemoteInvocationResult.class.getName() + "]: " + obj);
+					RemoteInvocationResult.class.getName() + "]: " + ClassUtils.getDescriptiveType(obj));
 		}
 		return (RemoteInvocationResult) obj;
 	}

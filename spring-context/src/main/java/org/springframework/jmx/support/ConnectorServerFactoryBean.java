@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -56,7 +56,7 @@ import org.springframework.util.CollectionUtils;
 public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 		implements FactoryBean<JMXConnectorServer>, InitializingBean, DisposableBean {
 
-	/** The default service URL */
+	/** The default service URL. */
 	public static final String DEFAULT_SERVICE_URL = "service:jmx:jmxmp://localhost:9875";
 
 
@@ -64,14 +64,17 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 
 	private Map<String, Object> environment = new HashMap<>();
 
+	@Nullable
 	private MBeanServerForwarder forwarder;
 
+	@Nullable
 	private ObjectName objectName;
 
 	private boolean threaded = false;
 
 	private boolean daemon = false;
 
+	@Nullable
 	private JMXConnectorServer connectorServer;
 
 
@@ -167,11 +170,12 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 		try {
 			if (this.threaded) {
 				// Start the connector server asynchronously (in a separate thread).
+				final JMXConnectorServer serverToStart = this.connectorServer;
 				Thread connectorThread = new Thread() {
 					@Override
 					public void run() {
 						try {
-							connectorServer.start();
+							serverToStart.start();
 						}
 						catch (IOException ex) {
 							throw new JmxException("Could not start JMX connector server after delay", ex);
@@ -202,6 +206,7 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 
 
 	@Override
+	@Nullable
 	public JMXConnectorServer getObject() {
 		return this.connectorServer;
 	}
@@ -224,11 +229,13 @@ public class ConnectorServerFactoryBean extends MBeanRegistrationSupport
 	 */
 	@Override
 	public void destroy() throws IOException {
-		if (logger.isInfoEnabled()) {
-			logger.info("Stopping JMX connector server: " + this.connectorServer);
-		}
 		try {
-			this.connectorServer.stop();
+			if (this.connectorServer != null) {
+				if (logger.isInfoEnabled()) {
+					logger.info("Stopping JMX connector server: " + this.connectorServer);
+				}
+				this.connectorServer.stop();
+			}
 		}
 		finally {
 			unregisterBeans();

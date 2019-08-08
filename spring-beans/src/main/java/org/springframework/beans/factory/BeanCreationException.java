@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,7 @@ package org.springframework.beans.factory;
 
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.FatalBeanException;
@@ -34,10 +34,13 @@ import org.springframework.lang.Nullable;
 @SuppressWarnings("serial")
 public class BeanCreationException extends FatalBeanException {
 
-	private String beanName;
+	@Nullable
+	private final String beanName;
 
-	private String resourceDescription;
+	@Nullable
+	private final String resourceDescription;
 
+	@Nullable
 	private List<Throwable> relatedCauses;
 
 
@@ -47,6 +50,8 @@ public class BeanCreationException extends FatalBeanException {
 	 */
 	public BeanCreationException(String msg) {
 		super(msg);
+		this.beanName = null;
+		this.resourceDescription = null;
 	}
 
 	/**
@@ -56,6 +61,8 @@ public class BeanCreationException extends FatalBeanException {
 	 */
 	public BeanCreationException(String msg, Throwable cause) {
 		super(msg, cause);
+		this.beanName = null;
+		this.resourceDescription = null;
 	}
 
 	/**
@@ -66,6 +73,7 @@ public class BeanCreationException extends FatalBeanException {
 	public BeanCreationException(String beanName, String msg) {
 		super("Error creating bean with name '" + beanName + "': " + msg);
 		this.beanName = beanName;
+		this.resourceDescription = null;
 	}
 
 	/**
@@ -91,6 +99,7 @@ public class BeanCreationException extends FatalBeanException {
 				(resourceDescription != null ? " defined in " + resourceDescription : "") + ": " + msg);
 		this.resourceDescription = resourceDescription;
 		this.beanName = beanName;
+		this.relatedCauses = null;
 	}
 
 	/**
@@ -119,6 +128,7 @@ public class BeanCreationException extends FatalBeanException {
 	/**
 	 * Return the name of the bean requested, if any.
 	 */
+	@Nullable
 	public String getBeanName() {
 		return this.beanName;
 	}
@@ -131,7 +141,7 @@ public class BeanCreationException extends FatalBeanException {
 	 */
 	public void addRelatedCause(Throwable ex) {
 		if (this.relatedCauses == null) {
-			this.relatedCauses = new LinkedList<>();
+			this.relatedCauses = new ArrayList<>();
 		}
 		this.relatedCauses.add(ex);
 	}
@@ -145,7 +155,7 @@ public class BeanCreationException extends FatalBeanException {
 		if (this.relatedCauses == null) {
 			return null;
 		}
-		return this.relatedCauses.toArray(new Throwable[this.relatedCauses.size()]);
+		return this.relatedCauses.toArray(new Throwable[0]);
 	}
 
 

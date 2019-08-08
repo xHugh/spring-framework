@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -63,7 +63,7 @@ import org.springframework.util.StringUtils;
 public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedenceInformation, Serializable {
 
 	/**
-	 * Key used in ReflectiveMethodInvocation userAtributes map for the current joinpoint.
+	 * Key used in ReflectiveMethodInvocation userAttributes map for the current joinpoint.
 	 */
 	protected static final String JOIN_POINT_KEY = JoinPoint.class.getName();
 
@@ -104,11 +104,11 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	private final AspectInstanceFactory aspectInstanceFactory;
 
 	/**
-	 * The name of the aspect (ref bean) in which this advice was defined (used
-	 * when determining advice precedence so that we can determine
+	 * The name of the aspect (ref bean) in which this advice was defined
+	 * (used when determining advice precedence so that we can determine
 	 * whether two pieces of advice come from the same aspect).
 	 */
-	private String aspectName;
+	private String aspectName = "";
 
 	/**
 	 * The order of declaration of this advice within the aspect.
@@ -117,15 +117,18 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	/**
 	 * This will be non-null if the creator of this advice object knows the argument names
-	 * and sets them explicitly
+	 * and sets them explicitly.
 	 */
-	private String[] argumentNames = null;
+	@Nullable
+	private String[] argumentNames;
 
-	/** Non-null if after throwing advice binds the thrown value */
-	private String throwingName = null;
+	/** Non-null if after throwing advice binds the thrown value. */
+	@Nullable
+	private String throwingName;
 
-	/** Non-null if after returning advice binds the return value */
-	private String returningName = null;
+	/** Non-null if after returning advice binds the return value. */
+	@Nullable
+	private String returningName;
 
 	private Class<?> discoveredReturningType = Object.class;
 
@@ -133,20 +136,22 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	/**
 	 * Index for thisJoinPoint argument (currently only
-	 * supported at index 0 if present at all)
+	 * supported at index 0 if present at all).
 	 */
 	private int joinPointArgumentIndex = -1;
 
 	/**
 	 * Index for thisJoinPointStaticPart argument (currently only
-	 * supported at index 0 if present at all)
+	 * supported at index 0 if present at all).
 	 */
 	private int joinPointStaticPartArgumentIndex = -1;
 
+	@Nullable
 	private Map<String, Integer> argumentBindings;
 
 	private boolean argumentsIntrospected = false;
 
+	@Nullable
 	private Type discoveredReturningGenericType;
 	// Note: Unlike return type, no such generic information is needed for the throwing type,
 	// since Java doesn't allow exception types to be parameterized.
@@ -219,6 +224,9 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	}
 
 
+	/**
+	 * Set the name of the aspect (bean) in which the advice was declared.
+	 */
 	public void setAspectName(String name) {
 		this.aspectName = name;
 	}
@@ -229,7 +237,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	}
 
 	/**
-	 * Sets the <b>declaration order</b> of this advice within the aspect
+	 * Set the declaration order of this advice within the aspect.
 	 */
 	public void setDeclarationOrder(int order) {
 		this.declarationOrder = order;
@@ -369,7 +377,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	 * to which argument name. There are multiple strategies for determining
 	 * this binding, which are arranged in a ChainOfResponsibility.
 	 */
-	public synchronized final void calculateArgumentBindings() {
+	public final synchronized void calculateArgumentBindings() {
 		// The simple case... nothing to bind.
 		if (this.argumentsIntrospected || this.parameterTypes.length == 0) {
 			return;
@@ -377,10 +385,8 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 		int numUnboundArgs = this.parameterTypes.length;
 		Class<?>[] parameterTypes = this.aspectJAdviceMethod.getParameterTypes();
-		if (maybeBindJoinPoint(parameterTypes[0]) || maybeBindProceedingJoinPoint(parameterTypes[0])) {
-			numUnboundArgs--;
-		}
-		else if (maybeBindJoinPointStaticPart(parameterTypes[0])) {
+		if (maybeBindJoinPoint(parameterTypes[0]) || maybeBindProceedingJoinPoint(parameterTypes[0]) ||
+				maybeBindJoinPointStaticPart(parameterTypes[0])) {
 			numUnboundArgs--;
 		}
 
@@ -464,6 +470,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	}
 
 	private void bindExplicitArguments(int numArgumentsLeftToBind) {
+		Assert.state(this.argumentNames != null, "No argument names available");
 		this.argumentBindings = new HashMap<>();
 
 		int numExpectedArgumentNames = this.aspectJAdviceMethod.getParameterCount();
@@ -504,7 +511,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		}
 
 		// configure the pointcut expression accordingly.
-		configurePointcutParameters(argumentIndexOffset);
+		configurePointcutParameters(this.argumentNames, argumentIndexOffset);
 	}
 
 	/**
@@ -512,7 +519,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 	 * pointcut parameters - but returning and throwing vars are handled differently
 	 * and must be removed from the list if present.
 	 */
-	private void configurePointcutParameters(int argumentIndexOffset) {
+	private void configurePointcutParameters(String[] argumentNames, int argumentIndexOffset) {
 		int numParametersToRemove = argumentIndexOffset;
 		if (this.returningName != null) {
 			numParametersToRemove++;
@@ -520,20 +527,20 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		if (this.throwingName != null) {
 			numParametersToRemove++;
 		}
-		String[] pointcutParameterNames = new String[this.argumentNames.length - numParametersToRemove];
+		String[] pointcutParameterNames = new String[argumentNames.length - numParametersToRemove];
 		Class<?>[] pointcutParameterTypes = new Class<?>[pointcutParameterNames.length];
 		Class<?>[] methodParameterTypes = this.aspectJAdviceMethod.getParameterTypes();
 
 		int index = 0;
-		for (int i = 0; i < this.argumentNames.length; i++) {
+		for (int i = 0; i < argumentNames.length; i++) {
 			if (i < argumentIndexOffset) {
 				continue;
 			}
-			if (this.argumentNames[i].equals(this.returningName) ||
-				this.argumentNames[i].equals(this.throwingName)) {
+			if (argumentNames[i].equals(this.returningName) ||
+				argumentNames[i].equals(this.throwingName)) {
 				continue;
 			}
-			pointcutParameterNames[index] = this.argumentNames[i];
+			pointcutParameterNames[index] = argumentNames[i];
 			pointcutParameterTypes[index] = methodParameterTypes[i];
 			index++;
 		}
@@ -544,7 +551,7 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 
 	/**
 	 * Take the arguments at the method execution join point and output a set of arguments
-	 * to the advice method
+	 * to the advice method.
 	 * @param jp the current JoinPoint
 	 * @param jpMatch the join point match that matched this execution join point
 	 * @param returnValue the return value from the method execution (may be null)
@@ -708,12 +715,12 @@ public abstract class AbstractAspectJAdvice implements Advice, AspectJPrecedence
 		}
 
 		@Override
-		public boolean matches(Method method, @Nullable Class<?> targetClass) {
+		public boolean matches(Method method, Class<?> targetClass) {
 			return !this.adviceMethod.equals(method);
 		}
 
 		@Override
-		public boolean equals(Object other) {
+		public boolean equals(@Nullable Object other) {
 			if (this == other) {
 				return true;
 			}

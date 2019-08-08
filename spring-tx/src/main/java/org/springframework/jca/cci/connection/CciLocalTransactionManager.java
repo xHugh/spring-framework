@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,6 +66,7 @@ import org.springframework.util.Assert;
 public class CciLocalTransactionManager extends AbstractPlatformTransactionManager
 		implements ResourceTransactionManager, InitializingBean {
 
+	@Nullable
 	private ConnectionFactory connectionFactory;
 
 
@@ -79,7 +80,7 @@ public class CciLocalTransactionManager extends AbstractPlatformTransactionManag
 
 	/**
 	 * Create a new CciLocalTransactionManager instance.
-	 * @param connectionFactory CCI ConnectionFactory to manage local transactions for
+	 * @param connectionFactory the CCI ConnectionFactory to manage local transactions for
 	 */
 	public CciLocalTransactionManager(ConnectionFactory connectionFactory) {
 		setConnectionFactory(connectionFactory);
@@ -91,7 +92,7 @@ public class CciLocalTransactionManager extends AbstractPlatformTransactionManag
 	 * Set the CCI ConnectionFactory that this instance should manage local
 	 * transactions for.
 	 */
-	public void setConnectionFactory(ConnectionFactory cf) {
+	public void setConnectionFactory(@Nullable ConnectionFactory cf) {
 		if (cf instanceof TransactionAwareConnectionFactoryProxy) {
 			// If we got a TransactionAwareConnectionFactoryProxy, we need to perform transactions
 			// for its underlying target ConnectionFactory, else JMS access code won't see
@@ -273,6 +274,7 @@ public class CciLocalTransactionManager extends AbstractPlatformTransactionManag
 	 */
 	private static class CciLocalTransactionObject {
 
+		@Nullable
 		private ConnectionHolder connectionHolder;
 
 		public void setConnectionHolder(@Nullable ConnectionHolder connectionHolder) {

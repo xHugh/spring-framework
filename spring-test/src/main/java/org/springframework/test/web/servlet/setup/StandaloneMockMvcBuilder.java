@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,17 +26,17 @@ import java.util.Map;
 import java.util.function.Supplier;
 import javax.servlet.ServletContext;
 
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.lang.Nullable;
 import org.springframework.mock.web.MockServletContext;
-import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.PropertyPlaceholderHelper;
 import org.springframework.util.PropertyPlaceholderHelper.PlaceholderResolver;
 import org.springframework.util.StringValueResolver;
@@ -62,6 +62,7 @@ import org.springframework.web.servlet.handler.MappedInterceptor;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.springframework.web.servlet.resource.ResourceUrlProvider;
 import org.springframework.web.servlet.support.SessionFlashMapManager;
 import org.springframework.web.servlet.theme.FixedThemeResolver;
 import org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator;
@@ -90,6 +91,7 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 
 	private final List<Object> controllers;
 
+	@Nullable
 	private List<Object> controllerAdvice;
 
 	private List<HttpMessageConverter<?>> messageConverters = new ArrayList<>();
@@ -100,26 +102,34 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 
 	private final List<MappedInterceptor> mappedInterceptors = new ArrayList<>();
 
-	private Validator validator = null;
+	@Nullable
+	private Validator validator;
 
+	@Nullable
 	private ContentNegotiationManager contentNegotiationManager;
 
-	private FormattingConversionService conversionService = null;
+	@Nullable
+	private FormattingConversionService conversionService;
 
+	@Nullable
 	private List<HandlerExceptionResolver> handlerExceptionResolvers;
 
+	@Nullable
 	private Long asyncRequestTimeout;
 
+	@Nullable
 	private List<ViewResolver> viewResolvers;
 
 	private LocaleResolver localeResolver = new AcceptHeaderLocaleResolver();
 
-	private FlashMapManager flashMapManager = null;
+	@Nullable
+	private FlashMapManager flashMapManager;
 
 	private boolean useSuffixPatternMatch = true;
 
 	private boolean useTrailingSlashPatternMatch = true;
 
+	@Nullable
 	private Boolean removeSemicolonContent;
 
 	private Map<String, String> placeholderValues = new HashMap<>();
@@ -132,22 +142,28 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 	 * @see MockMvcBuilders#standaloneSetup(Object...)
 	 */
 	protected StandaloneMockMvcBuilder(Object... controllers) {
-		Assert.isTrue(!ObjectUtils.isEmpty(controllers), "At least one controller is required");
-		this.controllers = Arrays.asList(controllers);
+		this.controllers = instantiateIfNecessary(controllers);
 	}
 
+	private static List<Object> instantiateIfNecessary(Object[] specified) {
+		List<Object> instances = new ArrayList<>(specified.length);
+		for (Object obj : specified) {
+			instances.add(obj instanceof Class ? BeanUtils.instantiateClass((Class<?>) obj) : obj);
+		}
+		return instances;
+	}
+
+
 	/**
-	 * Register one or more
-	 * {@link org.springframework.web.bind.annotation.ControllerAdvice
-	 * ControllerAdvice} instances to be used in tests.
-	 * <p>Normally {@code @ControllerAdvice} are auto-detected as long as they're
-	 * declared as Spring beans. However since the standalone setup does not load
-	 * any Spring configuration they need to be registered explicitly here
-	 * instead much like controllers.
+	 * Register one or more {@link org.springframework.web.bind.annotation.ControllerAdvice}
+	 * instances to be used in tests (specified {@code Class} will be turned into instance).
+	 * <p>Normally {@code @ControllerAdvice} are auto-detected as long as they're declared
+	 * as Spring beans. However since the standalone setup does not load any Spring config,
+	 * they need to be registered explicitly here instead much like controllers.
 	 * @since 4.2
 	 */
 	public StandaloneMockMvcBuilder setControllerAdvice(Object... controllerAdvice) {
-		this.controllerAdvice = Arrays.asList(controllerAdvice);
+		this.controllerAdvice = instantiateIfNecessary(controllerAdvice);
 		return this;
 	}
 
@@ -253,7 +269,7 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 	}
 
 	/**
-	 * Set up view resolution with the given {@link ViewResolver}s.
+	 * Set up view resolution with the given {@link ViewResolver ViewResolvers}.
 	 * If not set, an {@link InternalResourceViewResolver} is used by default.
 	 */
 	public StandaloneMockMvcBuilder setViewResolvers(ViewResolver...resolvers) {
@@ -337,7 +353,6 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 	 * @since 5.0
 	 */
 	public StandaloneMockMvcBuilder setCustomHandlerMapping(Supplier<RequestMappingHandlerMapping> factory) {
-		Assert.notNull(factory, "RequestMappingHandlerMapping supplier is required.");
 		this.handlerMappingFactory = factory;
 		return this;
 	}
@@ -360,7 +375,16 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 		wac.addBeans(this.controllers);
 		wac.addBeans(this.controllerAdvice);
 
-		RequestMappingHandlerMapping hm = config.getHandlerMapping();
+		FormattingConversionService mvcConversionService = config.mvcConversionService();
+		wac.addBean("mvcConversionService", mvcConversionService);
+		ResourceUrlProvider resourceUrlProvider = config.mvcResourceUrlProvider();
+		wac.addBean("mvcResourceUrlProvider", resourceUrlProvider);
+		ContentNegotiationManager mvcContentNegotiationManager = config.mvcContentNegotiationManager();
+		wac.addBean("mvcContentNegotiationManager", mvcContentNegotiationManager);
+		Validator mvcValidator = config.mvcValidator();
+		wac.addBean("mvcValidator", mvcValidator);
+
+		RequestMappingHandlerMapping hm = config.getHandlerMapping(mvcConversionService, resourceUrlProvider);
 		if (sc != null) {
 			hm.setServletContext(sc);
 		}
@@ -368,7 +392,8 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 		hm.afterPropertiesSet();
 		wac.addBean("requestMappingHandlerMapping", hm);
 
-		RequestMappingHandlerAdapter ha = config.requestMappingHandlerAdapter();
+		RequestMappingHandlerAdapter ha = config.requestMappingHandlerAdapter(mvcContentNegotiationManager,
+				mvcConversionService, mvcValidator);
 		if (sc != null) {
 			ha.setServletContext(sc);
 		}
@@ -376,7 +401,7 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 		ha.afterPropertiesSet();
 		wac.addBean("requestMappingHandlerAdapter", ha);
 
-		wac.addBean("handlerExceptionResolver", config.handlerExceptionResolver());
+		wac.addBean("handlerExceptionResolver", config.handlerExceptionResolver(mvcContentNegotiationManager));
 
 		wac.addBeans(initViewResolvers(wac));
 		wac.addBean(DispatcherServlet.LOCALE_RESOLVER_BEAN_NAME, this.localeResolver);
@@ -385,11 +410,13 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 
 		this.flashMapManager = new SessionFlashMapManager();
 		wac.addBean(DispatcherServlet.FLASH_MAP_MANAGER_BEAN_NAME, this.flashMapManager);
+
+		extendMvcSingletons(sc).forEach(wac::addBean);
 	}
 
 	private List<ViewResolver> initViewResolvers(WebApplicationContext wac) {
 		this.viewResolvers = (this.viewResolvers != null ? this.viewResolvers :
-				Collections.<ViewResolver>singletonList(new InternalResourceViewResolver()));
+				Collections.singletonList(new InternalResourceViewResolver()));
 		for (Object viewResolver : this.viewResolvers) {
 			if (viewResolver instanceof WebApplicationObjectSupport) {
 				((WebApplicationObjectSupport) viewResolver).setApplicationContext(wac);
@@ -398,17 +425,31 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 		return this.viewResolvers;
 	}
 
+	/**
+	 * This method could be used from a sub-class to register additional Spring
+	 * MVC infrastructure such as additional {@code HandlerMapping},
+	 * {@code HandlerAdapter}, and others.
+	 * @param servletContext the ServletContext
+	 * @return a map with additional MVC infrastructure object instances
+	 * @since 5.1.4
+	 */
+	protected Map<String, Object> extendMvcSingletons(@Nullable ServletContext servletContext) {
+		return Collections.emptyMap();
+	}
 
-	/** Using the MVC Java configuration as the starting point for the "standalone" setup */
+
+	/** Using the MVC Java configuration as the starting point for the "standalone" setup. */
 	private class StandaloneConfiguration extends WebMvcConfigurationSupport {
 
-		public RequestMappingHandlerMapping getHandlerMapping() {
+		public RequestMappingHandlerMapping getHandlerMapping(
+				FormattingConversionService mvcConversionService,
+				ResourceUrlProvider mvcResourceUrlProvider) {
 			RequestMappingHandlerMapping handlerMapping = handlerMappingFactory.get();
 			handlerMapping.setEmbeddedValueResolver(new StaticStringValueResolver(placeholderValues));
 			handlerMapping.setUseSuffixPatternMatch(useSuffixPatternMatch);
 			handlerMapping.setUseTrailingSlashMatch(useTrailingSlashPatternMatch);
 			handlerMapping.setOrder(0);
-			handlerMapping.setInterceptors(getInterceptors());
+			handlerMapping.setInterceptors(getInterceptors(mvcConversionService, mvcResourceUrlProvider));
 			if (removeSemicolonContent != null) {
 				handlerMapping.setRemoveSemicolonContent(removeSemicolonContent);
 			}
@@ -447,7 +488,7 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 
 		@Override
 		public FormattingConversionService mvcConversionService() {
-			return (conversionService != null) ? conversionService : super.mvcConversionService();
+			return (conversionService != null ? conversionService : super.mvcConversionService());
 		}
 
 		@Override
@@ -478,7 +519,10 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 			}
 			for (HandlerExceptionResolver resolver : handlerExceptionResolvers) {
 				if (resolver instanceof ApplicationContextAware) {
-					((ApplicationContextAware) resolver).setApplicationContext(getApplicationContext());
+					ApplicationContext applicationContext = getApplicationContext();
+					if (applicationContext != null) {
+						((ApplicationContextAware) resolver).setApplicationContext(applicationContext);
+					}
 				}
 				if (resolver instanceof InitializingBean) {
 					try {
@@ -502,7 +546,7 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 
 		private final PlaceholderResolver resolver;
 
-		public StaticStringValueResolver(final Map<String, String> values) {
+		public StaticStringValueResolver(Map<String, String> values) {
 			this.helper = new PropertyPlaceholderHelper("${", "}", ":", false);
 			this.resolver = values::get;
 		}
@@ -526,7 +570,8 @@ public class StandaloneMockMvcBuilder extends AbstractMockMvcBuilder<StandaloneM
 		}
 
 		@Override
-		public View resolveViewName(String viewName, Locale locale) throws Exception {
+		@Nullable
+		public View resolveViewName(String viewName, Locale locale) {
 			return this.view;
 		}
 	}

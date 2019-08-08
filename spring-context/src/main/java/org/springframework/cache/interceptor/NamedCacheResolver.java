@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,12 +16,12 @@
 
 package org.springframework.cache.interceptor;
 
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
 import org.springframework.cache.CacheManager;
+import org.springframework.lang.Nullable;
 
 /**
  * A {@link CacheResolver} that forces the resolution to a configurable
@@ -32,6 +32,7 @@ import org.springframework.cache.CacheManager;
  */
 public class NamedCacheResolver extends AbstractCacheResolver {
 
+	@Nullable
 	private Collection<String> cacheNames;
 
 

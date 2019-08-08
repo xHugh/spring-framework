@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,6 +41,7 @@ import org.springframework.util.ReflectionUtils;
  */
 public class ArgumentConvertingMethodInvoker extends MethodInvoker {
 
+	@Nullable
 	private TypeConverter typeConverter;
 
 	private boolean useDefaultConverter = true;
@@ -54,9 +55,9 @@ public class ArgumentConvertingMethodInvoker extends MethodInvoker {
 	 * @see org.springframework.beans.SimpleTypeConverter
 	 * @see org.springframework.beans.BeanWrapperImpl
 	 */
-	public void setTypeConverter(TypeConverter typeConverter) {
+	public void setTypeConverter(@Nullable TypeConverter typeConverter) {
 		this.typeConverter = typeConverter;
-		this.useDefaultConverter = false;
+		this.useDefaultConverter = (typeConverter == null);
 	}
 
 	/**

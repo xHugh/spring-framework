@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -112,6 +112,7 @@ import org.springframework.util.Assert;
 public class DataSourceTransactionManager extends AbstractPlatformTransactionManager
 		implements ResourceTransactionManager, InitializingBean {
 
+	@Nullable
 	private DataSource dataSource;
 
 	private boolean enforceReadOnly = false;
@@ -128,7 +129,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 	/**
 	 * Create a new DataSourceTransactionManager instance.
-	 * @param dataSource JDBC DataSource to manage transactions for
+	 * @param dataSource the JDBC DataSource to manage transactions for
 	 */
 	public DataSourceTransactionManager(DataSource dataSource) {
 		this();
@@ -154,7 +155,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 	 * @see TransactionAwareDataSourceProxy
 	 * @see org.springframework.transaction.jta.JtaTransactionManager
 	 */
-	public void setDataSource(DataSource dataSource) {
+	public void setDataSource(@Nullable DataSource dataSource) {
 		if (dataSource instanceof TransactionAwareDataSourceProxy) {
 			// If we got a TransactionAwareDataSourceProxy, we need to perform transactions
 			// for its underlying target DataSource, else data access code won't see
@@ -236,7 +237,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 		DataSourceTransactionObject txObject = new DataSourceTransactionObject();
 		txObject.setSavepointAllowed(isNestedTransactionAllowed());
 		ConnectionHolder conHolder =
-				(ConnectionHolder) TransactionSynchronizationManager.getResource(this.dataSource);
+				(ConnectionHolder) TransactionSynchronizationManager.getResource(obtainDataSource());
 		txObject.setConnectionHolder(conHolder, false);
 		return txObject;
 	}
@@ -298,7 +299,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 		catch (Throwable ex) {
 			if (txObject.isNewConnectionHolder()) {
-				DataSourceUtils.releaseConnection(con, this.dataSource);
+				DataSourceUtils.releaseConnection(con, obtainDataSource());
 				txObject.setConnectionHolder(null, false);
 			}
 			throw new CannotCreateTransactionException("Could not open JDBC Connection for transaction", ex);
@@ -309,12 +310,12 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 	protected Object doSuspend(Object transaction) {
 		DataSourceTransactionObject txObject = (DataSourceTransactionObject) transaction;
 		txObject.setConnectionHolder(null);
-		return TransactionSynchronizationManager.unbindResource(this.dataSource);
+		return TransactionSynchronizationManager.unbindResource(obtainDataSource());
 	}
 
 	@Override
 	protected void doResume(@Nullable Object transaction, Object suspendedResources) {
-		TransactionSynchronizationManager.bindResource(this.dataSource, suspendedResources);
+		TransactionSynchronizationManager.bindResource(obtainDataSource(), suspendedResources);
 	}
 
 	@Override
@@ -363,7 +364,7 @@ public class DataSourceTransactionManager extends AbstractPlatformTransactionMan
 
 		// Remove the connection holder from the thread, if exposed.
 		if (txObject.isNewConnectionHolder()) {
-			TransactionSynchronizationManager.unbindResource(this.dataSource);
+			TransactionSynchronizationManager.unbindResource(obtainDataSource());
 		}
 
 		// Reset connection.

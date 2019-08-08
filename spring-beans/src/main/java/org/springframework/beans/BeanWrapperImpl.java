@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -66,11 +66,13 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	 * Cached introspections results for this object, to prevent encountering
 	 * the cost of JavaBeans introspection every time.
 	 */
+	@Nullable
 	private CachedIntrospectionResults cachedIntrospectionResults;
 
 	/**
-	 * The security context used for invoking the property methods
+	 * The security context used for invoking the property methods.
 	 */
+	@Nullable
 	private AccessControlContext acc;
 
 
@@ -164,7 +166,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	}
 
 	/**
-	 * Obtain a lazily initializted CachedIntrospectionResults instance
+	 * Obtain a lazily initialized CachedIntrospectionResults instance
 	 * for the wrapped object.
 	 */
 	private CachedIntrospectionResults getCachedIntrospectionResults() {
@@ -178,7 +180,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	 * Set the security context used during the invocation of the wrapped instance methods.
 	 * Can be null.
 	 */
-	public void setSecurityContext(AccessControlContext acc) {
+	public void setSecurityContext(@Nullable AccessControlContext acc) {
 		this.acc = acc;
 	}
 
@@ -186,6 +188,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	 * Return the security context used during the invocation of the wrapped instance methods.
 	 * Can be null.
 	 */
+	@Nullable
 	public AccessControlContext getSecurityContext() {
 		return this.acc;
 	}
@@ -202,7 +205,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	 * @throws TypeMismatchException if type conversion failed
 	 */
 	@Nullable
-	public Object convertForProperty(Object value, String propertyName) throws TypeMismatchException {
+	public Object convertForProperty(@Nullable Object value, String propertyName) throws TypeMismatchException {
 		CachedIntrospectionResults cachedIntrospectionResults = getCachedIntrospectionResults();
 		PropertyDescriptor pd = cachedIntrospectionResults.getPropertyDescriptor(propertyName);
 		if (pd == null) {
@@ -222,12 +225,10 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	}
 
 	@Override
+	@Nullable
 	protected BeanPropertyHandler getLocalPropertyHandler(String propertyName) {
 		PropertyDescriptor pd = getCachedIntrospectionResults().getPropertyDescriptor(propertyName);
-		if (pd != null) {
-			return new BeanPropertyHandler(pd);
-		}
-		return null;
+		return (pd != null ? new BeanPropertyHandler(pd) : null);
 	}
 
 	@Override
@@ -238,8 +239,7 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 	@Override
 	protected NotWritablePropertyException createNotWritablePropertyException(String propertyName) {
 		PropertyMatches matches = PropertyMatches.forProperty(propertyName, getRootClass());
-		throw new NotWritablePropertyException(
-				getRootClass(), getNestedPath() + propertyName,
+		throw new NotWritablePropertyException(getRootClass(), getNestedPath() + propertyName,
 				matches.buildErrorMessage(), matches.getPossibleMatches());
 	}
 
@@ -281,11 +281,13 @@ public class BeanWrapperImpl extends AbstractNestablePropertyAccessor implements
 		}
 
 		@Override
+		@Nullable
 		public TypeDescriptor nested(int level) {
-			return TypeDescriptor.nested(property(pd), level);
+			return TypeDescriptor.nested(property(this.pd), level);
 		}
 
 		@Override
+		@Nullable
 		public Object getValue() throws Exception {
 			final Method readMethod = this.pd.getReadMethod();
 			if (System.getSecurityManager() != null) {

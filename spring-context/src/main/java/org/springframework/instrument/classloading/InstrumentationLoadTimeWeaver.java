@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,16 +31,18 @@ import org.springframework.util.ClassUtils;
 /**
  * {@link LoadTimeWeaver} relying on VM {@link Instrumentation}.
  *
- * <p>Start the JVM specifying the Java agent to be used, like as follows:
+ * <p>Start the JVM specifying the Java agent to be used &mdash; for example, as
+ * follows where <code>spring-instrument-{version}.jar</code> is a JAR file
+ * containing the {@link InstrumentationSavingAgent} class shipped with Spring
+ * and where <code>{version}</code> is the release version of the Spring
+ * Framework (e.g., {@code 5.1.5.RELEASE}).
  *
- * <p><code class="code">-javaagent:path/to/org.springframework.instrument.jar</code>
+ * <p><code>-javaagent:path/to/spring-instrument-{version}.jar</code>
  *
- * <p>where {@code org.springframework.instrument.jar} is a JAR file containing
- * the {@link InstrumentationSavingAgent} class, as shipped with Spring.
+ * <p>In Eclipse, for example, add something similar to the following to the
+ * JVM arguments for the Eclipse "Run configuration":
  *
- * <p>In Eclipse, for example, set the "Run configuration"'s JVM args to be of the form:
- *
- * <p><code class="code">-javaagent:${project_loc}/lib/org.springframework.instrument.jar</code>
+ * <p><code>-javaagent:${project_loc}/lib/spring-instrument-{version}.jar</code>
  *
  * @author Rod Johnson
  * @author Juergen Hoeller
@@ -54,8 +56,10 @@ public class InstrumentationLoadTimeWeaver implements LoadTimeWeaver {
 			InstrumentationLoadTimeWeaver.class.getClassLoader());
 
 
+	@Nullable
 	private final ClassLoader classLoader;
 
+	@Nullable
 	private final Instrumentation instrumentation;
 
 	private final List<ClassFileTransformer> transformers = new ArrayList<>(4);
@@ -115,7 +119,7 @@ public class InstrumentationLoadTimeWeaver implements LoadTimeWeaver {
 	 */
 	public void removeTransformers() {
 		synchronized (this.transformers) {
-			if (!this.transformers.isEmpty()) {
+			if (this.instrumentation != null && !this.transformers.isEmpty()) {
 				for (int i = this.transformers.size() - 1; i >= 0; i--) {
 					this.instrumentation.removeTransformer(this.transformers.get(i));
 				}
@@ -167,9 +171,12 @@ public class InstrumentationLoadTimeWeaver implements LoadTimeWeaver {
 
 		private final ClassFileTransformer targetTransformer;
 
+		@Nullable
 		private final ClassLoader targetClassLoader;
 
-		public FilteringClassFileTransformer(ClassFileTransformer targetTransformer, ClassLoader targetClassLoader) {
+		public FilteringClassFileTransformer(
+				ClassFileTransformer targetTransformer, @Nullable ClassLoader targetClassLoader) {
+
 			this.targetTransformer = targetTransformer;
 			this.targetClassLoader = targetClassLoader;
 		}
@@ -179,7 +186,7 @@ public class InstrumentationLoadTimeWeaver implements LoadTimeWeaver {
 		public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
 				ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
 
-			if (!this.targetClassLoader.equals(loader)) {
+			if (this.targetClassLoader != loader) {
 				return null;
 			}
 			return this.targetTransformer.transform(

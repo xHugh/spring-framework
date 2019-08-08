@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -63,17 +63,20 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 
 	protected final Object proxy;
 
+	@Nullable
 	protected final Object target;
 
 	protected final Method method;
 
-	protected Object[] arguments;
+	protected Object[] arguments = new Object[0];
 
+	@Nullable
 	private final Class<?> targetClass;
 
 	/**
 	 * Lazily initialized map of user-specific attributes for this invocation.
 	 */
+	@Nullable
 	private Map<String, Object> userAttributes;
 
 	/**
@@ -103,7 +106,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 	 * but would complicate the code. And it would work only for static pointcuts.
 	 */
 	protected ReflectiveMethodInvocation(
-			Object proxy, @Nullable Object target, Method method, Object[] arguments,
+			Object proxy, @Nullable Object target, Method method, @Nullable Object[] arguments,
 			@Nullable Class<?> targetClass, List<Object> interceptorsAndDynamicMethodMatchers) {
 
 		this.proxy = proxy;
@@ -143,7 +146,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 
 	@Override
 	public final Object[] getArguments() {
-		return (this.arguments != null ? this.arguments : new Object[0]);
+		return this.arguments;
 	}
 
 	@Override
@@ -167,7 +170,8 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 			// been evaluated and found to match.
 			InterceptorAndDynamicMethodMatcher dm =
 					(InterceptorAndDynamicMethodMatcher) interceptorOrInterceptionAdvice;
-			if (dm.methodMatcher.matches(this.method, this.targetClass, this.arguments)) {
+			Class<?> targetClass = (this.targetClass != null ? this.targetClass : this.method.getDeclaringClass());
+			if (dm.methodMatcher.matches(this.method, targetClass, this.arguments)) {
 				return dm.interceptor.invoke(this);
 			}
 			else {
@@ -205,8 +209,8 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 	 */
 	@Override
 	public MethodInvocation invocableClone() {
-		Object[] cloneArguments = null;
-		if (this.arguments != null) {
+		Object[] cloneArguments = this.arguments;
+		if (this.arguments.length > 0) {
 			// Build an independent copy of the arguments array.
 			cloneArguments = new Object[this.arguments.length];
 			System.arraycopy(this.arguments, 0, cloneArguments, 0, this.arguments.length);
@@ -223,7 +227,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 	 * @see java.lang.Object#clone()
 	 */
 	@Override
-	public MethodInvocation invocableClone(@Nullable Object... arguments) {
+	public MethodInvocation invocableClone(Object... arguments) {
 		// Force initialization of the user attributes Map,
 		// for having a shared Map reference in the clone.
 		if (this.userAttributes == null) {
@@ -259,6 +263,7 @@ public class ReflectiveMethodInvocation implements ProxyMethodInvocation, Clonea
 	}
 
 	@Override
+	@Nullable
 	public Object getUserAttribute(String key) {
 		return (this.userAttributes != null ? this.userAttributes.get(key) : null);
 	}

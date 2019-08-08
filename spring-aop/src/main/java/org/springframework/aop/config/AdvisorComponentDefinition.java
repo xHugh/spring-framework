@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -39,15 +39,15 @@ public class AdvisorComponentDefinition extends AbstractComponentDefinition {
 
 	private final BeanDefinition advisorDefinition;
 
-	private String description;
+	private final String description;
 
-	private BeanReference[] beanReferences;
+	private final BeanReference[] beanReferences;
 
-	private BeanDefinition[] beanDefinitions;
+	private final BeanDefinition[] beanDefinitions;
 
 
 	public AdvisorComponentDefinition(String advisorBeanName, BeanDefinition advisorDefinition) {
-		 this(advisorBeanName, advisorDefinition, null);
+		this(advisorBeanName, advisorDefinition, null);
 	}
 
 	public AdvisorComponentDefinition(
@@ -57,11 +57,7 @@ public class AdvisorComponentDefinition extends AbstractComponentDefinition {
 		Assert.notNull(advisorDefinition, "'advisorDefinition' must not be null");
 		this.advisorBeanName = advisorBeanName;
 		this.advisorDefinition = advisorDefinition;
-		unwrapDefinitions(advisorDefinition, pointcutDefinition);
-	}
 
-
-	private void unwrapDefinitions(BeanDefinition advisorDefinition, @Nullable BeanDefinition pointcutDefinition) {
 		MutablePropertyValues pvs = advisorDefinition.getPropertyValues();
 		BeanReference adviceReference = (BeanReference) pvs.get("adviceBeanName");
 		Assert.state(adviceReference != null, "Missing 'adviceBeanName' property");
@@ -114,6 +110,7 @@ public class AdvisorComponentDefinition extends AbstractComponentDefinition {
 	}
 
 	@Override
+	@Nullable
 	public Object getSource() {
 		return this.advisorDefinition.getSource();
 	}

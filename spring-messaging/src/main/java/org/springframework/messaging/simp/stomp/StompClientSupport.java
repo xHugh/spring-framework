@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,6 +17,7 @@
 package org.springframework.messaging.simp.stomp;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.MessageConverter;
@@ -43,11 +44,12 @@ public abstract class StompClientSupport {
 
 	private MessageConverter messageConverter = new SimpleMessageConverter();
 
+	@Nullable
 	private TaskScheduler taskScheduler;
 
 	private long[] defaultHeartbeat = new long[] {10000, 10000};
 
-	private long receiptTimeLimit = 15 * 1000;
+	private long receiptTimeLimit = TimeUnit.SECONDS.toMillis(15);
 
 
 	/**
@@ -71,12 +73,12 @@ public abstract class StompClientSupport {
 
 	/**
 	 * Configure a scheduler to use for heartbeats and for receipt tracking.
-	 * <p><strong>Note:</strong> some transports have built-in support to work
+	 * <p><strong>Note:</strong> Some transports have built-in support to work
 	 * with heartbeats and therefore do not require a TaskScheduler.
 	 * Receipts however, if needed, do require a TaskScheduler to be configured.
 	 * <p>By default, this is not set.
 	 */
-	public void setTaskScheduler(TaskScheduler taskScheduler) {
+	public void setTaskScheduler(@Nullable TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
 	}
 
@@ -97,8 +99,8 @@ public abstract class StompClientSupport {
 	 * that default and for example set it to "0,0" if they require a
 	 * TaskScheduler to be configured first.
 	 * @param heartbeat the value for the CONNECT "heart-beat" header
-	 * @see <a href="http://stomp.github.io/stomp-specification-1.2.html#Heart-beating">
-	 * http://stomp.github.io/stomp-specification-1.2.html#Heart-beating</a>
+	 * @see <a href="https://stomp.github.io/stomp-specification-1.2.html#Heart-beating">
+	 * https://stomp.github.io/stomp-specification-1.2.html#Heart-beating</a>
 	 */
 	public void setDefaultHeartbeat(long[] heartbeat) {
 		if (heartbeat.length != 2 || heartbeat[0] < 0 || heartbeat[1] < 0) {

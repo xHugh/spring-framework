@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -87,24 +87,33 @@ public class LocalValidatorFactoryBean extends SpringValidatorAdapter
 		implements ValidatorFactory, ApplicationContextAware, InitializingBean, DisposableBean {
 
 	@SuppressWarnings("rawtypes")
+	@Nullable
 	private Class providerClass;
 
+	@Nullable
 	private ValidationProviderResolver validationProviderResolver;
 
+	@Nullable
 	private MessageInterpolator messageInterpolator;
 
+	@Nullable
 	private TraversableResolver traversableResolver;
 
+	@Nullable
 	private ConstraintValidatorFactory constraintValidatorFactory;
 
+	@Nullable
 	private ParameterNameDiscoverer parameterNameDiscoverer = new DefaultParameterNameDiscoverer();
 
+	@Nullable
 	private Resource[] mappingLocations;
 
 	private final Map<String, String> validationPropertyMap = new HashMap<>();
 
+	@Nullable
 	private ApplicationContext applicationContext;
 
+	@Nullable
 	private ValidatorFactory validatorFactory;
 
 
@@ -148,6 +157,11 @@ public class LocalValidatorFactoryBean extends SpringValidatorAdapter
 	 * not both. If you would like to build a custom MessageInterpolator, consider deriving from
 	 * Hibernate Validator's {@link ResourceBundleMessageInterpolator} and passing in a
 	 * Spring-based {@code ResourceBundleLocator} when constructing your interpolator.
+	 * <p>In order for Hibernate's default validation messages to be resolved still, your
+	 * {@link MessageSource} must be configured for optional resolution (usually the default).
+	 * In particular, the {@code MessageSource} instance specified here should not apply
+	 * {@link org.springframework.context.support.AbstractMessageSource#setUseCodeAsDefaultMessage
+	 * "useCodeAsDefaultMessage"} behavior. Please double-check your setup accordingly.
 	 * @see ResourceBundleMessageInterpolator
 	 */
 	public void setValidationMessageSource(MessageSource messageSource) {
@@ -273,7 +287,7 @@ public class LocalValidatorFactoryBean extends SpringValidatorAdapter
 		}
 
 		if (this.parameterNameDiscoverer != null) {
-			configureParameterNameProviderIfPossible(configuration);
+			configureParameterNameProvider(this.parameterNameDiscoverer, configuration);
 		}
 
 		if (this.mappingLocations != null) {
@@ -296,8 +310,7 @@ public class LocalValidatorFactoryBean extends SpringValidatorAdapter
 		setTargetValidator(this.validatorFactory.getValidator());
 	}
 
-	private void configureParameterNameProviderIfPossible(Configuration<?> configuration) {
-		final ParameterNameDiscoverer discoverer = this.parameterNameDiscoverer;
+	private void configureParameterNameProvider(ParameterNameDiscoverer discoverer, Configuration<?> configuration) {
 		final ParameterNameProvider defaultProvider = configuration.getDefaultParameterNameProvider();
 		configuration.parameterNameProvider(new ParameterNameProvider() {
 			@Override
@@ -386,16 +399,19 @@ public class LocalValidatorFactoryBean extends SpringValidatorAdapter
 				// ignore - we'll try ValidatorFactory unwrapping next
 			}
 		}
-		try {
-			return this.validatorFactory.unwrap(type);
-		}
-		catch (ValidationException ex) {
-			// ignore if just being asked for ValidatorFactory
-			if (ValidatorFactory.class == type) {
-				return (T) this.validatorFactory;
+		if (this.validatorFactory != null) {
+			try {
+				return this.validatorFactory.unwrap(type);
 			}
-			throw ex;
+			catch (ValidationException ex) {
+				// ignore if just being asked for ValidatorFactory
+				if (ValidatorFactory.class == type) {
+					return (T) this.validatorFactory;
+				}
+				throw ex;
+			}
 		}
+		throw new ValidationException("Cannot unwrap to " + type);
 	}
 
 	public void close() {

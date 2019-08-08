@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,6 @@
 
 package org.springframework.core.codec;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.channels.AsynchronousFileChannel;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.file.StandardOpenOption;
 import java.util.Map;
 
 import reactor.core.publisher.Flux;
@@ -37,13 +32,16 @@ import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StreamUtils;
 
 /**
- * Encoder for {@link Resource}s.
+ * Encoder for {@link Resource Resources}.
  *
  * @author Arjen Poutsma
  * @since 5.0
  */
 public class ResourceEncoder extends AbstractSingleValueEncoder<Resource> {
 
+	/**
+	 * The default buffer size used by the encoder.
+	 */
 	public static final int DEFAULT_BUFFER_SIZE = StreamUtils.BUFFER_SIZE;
 
 	private final int bufferSize;
@@ -62,33 +60,19 @@ public class ResourceEncoder extends AbstractSingleValueEncoder<Resource> {
 
 	@Override
 	public boolean canEncode(ResolvableType elementType, @Nullable MimeType mimeType) {
-		Class<?> clazz = elementType.resolve(Object.class);
+		Class<?> clazz = elementType.toClass();
 		return (super.canEncode(elementType, mimeType) && Resource.class.isAssignableFrom(clazz));
 	}
 
 	@Override
-	protected Flux<DataBuffer> encode(Resource resource, DataBufferFactory dataBufferFactory,
+	protected Flux<DataBuffer> encode(Resource resource, DataBufferFactory bufferFactory,
 			ResolvableType type, @Nullable MimeType mimeType, @Nullable Map<String, Object> hints) {
 
-		try {
-			if (resource.isFile()) {
-				File file = resource.getFile();
-				AsynchronousFileChannel channel =
-						AsynchronousFileChannel.open(file.toPath(), StandardOpenOption.READ);
-				return DataBufferUtils.read(channel, dataBufferFactory, this.bufferSize);
-			}
+		if (logger.isDebugEnabled() && !Hints.isLoggingSuppressed(hints)) {
+			String logPrefix = Hints.getLogPrefix(hints);
+			logger.debug(logPrefix + "Writing [" + resource + "]");
 		}
-		catch (IOException ignore) {
-			// fallback to resource.readableChannel(), below
-		}
-
-		try {
-			ReadableByteChannel channel = resource.readableChannel();
-			return DataBufferUtils.read(channel, dataBufferFactory, this.bufferSize);
-		}
-		catch (IOException ex) {
-			return Flux.error(ex);
-		}
+		return DataBufferUtils.read(resource, bufferFactory, this.bufferSize);
 	}
 
 }

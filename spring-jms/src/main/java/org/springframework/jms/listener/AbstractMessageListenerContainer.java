@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,7 +31,6 @@ import org.springframework.jms.support.JmsUtils;
 import org.springframework.jms.support.QosSettings;
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.lang.Nullable;
-import org.springframework.util.Assert;
 import org.springframework.util.ErrorHandler;
 
 /**
@@ -143,28 +142,37 @@ import org.springframework.util.ErrorHandler;
 public abstract class AbstractMessageListenerContainer extends AbstractJmsListeningContainer
 		implements MessageListenerContainer {
 
+	@Nullable
 	private volatile Object destination;
 
+	@Nullable
 	private volatile String messageSelector;
 
+	@Nullable
 	private volatile Object messageListener;
 
 	private boolean subscriptionDurable = false;
 
 	private boolean subscriptionShared = false;
 
+	@Nullable
 	private String subscriptionName;
 
+	@Nullable
 	private Boolean replyPubSubDomain;
 
+	@Nullable
 	private QosSettings replyQosSettings;
 
 	private boolean pubSubNoLocal = false;
 
+	@Nullable
 	private MessageConverter messageConverter;
 
+	@Nullable
 	private ExceptionListener exceptionListener;
 
+	@Nullable
 	private ErrorHandler errorHandler;
 
 	private boolean exposeListenerSession = true;
@@ -187,8 +195,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * CACHE_CONSUMER). However, this is considered advanced usage; use it with care!
 	 * @see #setDestinationName(String)
 	 */
-	public void setDestination(Destination destination) {
-		Assert.notNull(destination, "'destination' must not be null");
+	public void setDestination(@Nullable Destination destination) {
 		this.destination = destination;
 		if (destination instanceof Topic && !(destination instanceof Queue)) {
 			// Clearly a Topic: let's set the "pubSubDomain" flag accordingly.
@@ -217,8 +224,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * CACHE_CONSUMER). However, this is considered advanced usage; use it with care!
 	 * @see #setDestination(javax.jms.Destination)
 	 */
-	public void setDestinationName(String destinationName) {
-		Assert.notNull(destinationName, "'destinationName' must not be null");
+	public void setDestinationName(@Nullable String destinationName) {
 		this.destination = destinationName;
 	}
 
@@ -238,7 +244,8 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * (never {@code null}).
 	 */
 	protected String getDestinationDescription() {
-		return this.destination.toString();
+		Object destination = this.destination;
+		return (destination != null ? destination.toString() : "");
 	}
 
 	/**
@@ -276,10 +283,10 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @see javax.jms.MessageListener
 	 * @see SessionAwareMessageListener
 	 */
-	public void setMessageListener(Object messageListener) {
+	public void setMessageListener(@Nullable Object messageListener) {
 		checkMessageListener(messageListener);
 		this.messageListener = messageListener;
-		if (this.subscriptionName == null) {
+		if (messageListener != null && this.subscriptionName == null) {
 			this.subscriptionName = getDefaultSubscriptionName(messageListener);
 		}
 	}
@@ -303,8 +310,8 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @see javax.jms.MessageListener
 	 * @see SessionAwareMessageListener
 	 */
-	protected void checkMessageListener(Object messageListener) {
-		if (!(messageListener instanceof MessageListener ||
+	protected void checkMessageListener(@Nullable Object messageListener) {
+		if (messageListener != null && !(messageListener instanceof MessageListener ||
 				messageListener instanceof SessionAwareMessageListener)) {
 			throw new IllegalArgumentException(
 					"Message listener needs to be of type [" + MessageListener.class.getName() +
@@ -398,7 +405,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @see #setClientId
 	 * @see #setMessageListener
 	 */
-	public void setSubscriptionName(String subscriptionName) {
+	public void setSubscriptionName(@Nullable String subscriptionName) {
 		this.subscriptionName = subscriptionName;
 	}
 
@@ -425,9 +432,9 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @see #setClientId
 	 * @see #setMessageListener
 	 */
-	public void setDurableSubscriptionName(String durableSubscriptionName) {
+	public void setDurableSubscriptionName(@Nullable String durableSubscriptionName) {
 		this.subscriptionName = durableSubscriptionName;
-		this.subscriptionDurable = true;
+		this.subscriptionDurable = (durableSubscriptionName != null);
 	}
 
 	/**
@@ -479,7 +486,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	@Override
 	public boolean isReplyPubSubDomain() {
 		if (this.replyPubSubDomain != null) {
-			return replyPubSubDomain;
+			return this.replyPubSubDomain;
 		}
 		else {
 			return isPubSubDomain();
@@ -498,6 +505,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	}
 
 	@Override
+	@Nullable
 	public QosSettings getReplyQosSettings() {
 		return this.replyQosSettings;
 	}
@@ -506,11 +514,12 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * Set the {@link MessageConverter} strategy for converting JMS Messages.
 	 * @since 4.1
 	 */
-	public void setMessageConverter(MessageConverter messageConverter) {
+	public void setMessageConverter(@Nullable MessageConverter messageConverter) {
 		this.messageConverter = messageConverter;
 	}
 
 	@Override
+	@Nullable
 	public MessageConverter getMessageConverter() {
 		return this.messageConverter;
 	}
@@ -519,7 +528,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * Set the JMS ExceptionListener to notify in case of a JMSException thrown
 	 * by the registered message listener or the invocation infrastructure.
 	 */
-	public void setExceptionListener(ExceptionListener exceptionListener) {
+	public void setExceptionListener(@Nullable ExceptionListener exceptionListener) {
 		this.exceptionListener = exceptionListener;
 	}
 
@@ -538,7 +547,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * <p>By default, there will be <b>no</b> ErrorHandler so that error-level
 	 * logging is the only result.
 	 */
-	public void setErrorHandler(ErrorHandler errorHandler) {
+	public void setErrorHandler(@Nullable ErrorHandler errorHandler) {
 		this.errorHandler = errorHandler;
 	}
 
@@ -664,17 +673,9 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 		try {
 			invokeListener(session, message);
 		}
-		catch (JMSException ex) {
+		catch (JMSException | RuntimeException | Error ex) {
 			rollbackOnExceptionIfNecessary(session, ex);
 			throw ex;
-		}
-		catch (RuntimeException ex) {
-			rollbackOnExceptionIfNecessary(session, ex);
-			throw ex;
-		}
-		catch (Error err) {
-			rollbackOnExceptionIfNecessary(session, err);
-			throw err;
 		}
 		commitIfNecessary(session, message);
 	}
@@ -717,7 +718,7 @@ public abstract class AbstractMessageListenerContainer extends AbstractJmsListen
 	 * @see SessionAwareMessageListener
 	 * @see #setExposeListenerSession
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({"rawtypes", "unchecked"})
 	protected void doInvokeListener(SessionAwareMessageListener listener, Session session, Message message)
 			throws JMSException {
 

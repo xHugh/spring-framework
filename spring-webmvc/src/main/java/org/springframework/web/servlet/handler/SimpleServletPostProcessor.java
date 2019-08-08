@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -69,8 +69,10 @@ public class SimpleServletPostProcessor implements
 
 	private boolean useSharedServletConfig = true;
 
+	@Nullable
 	private ServletContext servletContext;
 
+	@Nullable
 	private ServletConfig servletConfig;
 
 
@@ -140,9 +142,10 @@ public class SimpleServletPostProcessor implements
 
 		private final String servletName;
 
+		@Nullable
 		private final ServletContext servletContext;
 
-		public DelegatingServletConfig(String servletName, ServletContext servletContext) {
+		public DelegatingServletConfig(String servletName, @Nullable ServletContext servletContext) {
 			this.servletName = servletName;
 			this.servletContext = servletContext;
 		}
@@ -153,6 +156,7 @@ public class SimpleServletPostProcessor implements
 		}
 
 		@Override
+		@Nullable
 		public ServletContext getServletContext() {
 			return this.servletContext;
 		}

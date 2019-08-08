@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,8 +20,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -65,9 +65,9 @@ public abstract class AopUtils {
 	 * @see #isJdkDynamicProxy
 	 * @see #isCglibProxy
 	 */
-	public static boolean isAopProxy(Object object) {
-		return (object instanceof SpringProxy &&
-				(Proxy.isProxyClass(object.getClass()) || ClassUtils.isCglibProxyClass(object.getClass())));
+	public static boolean isAopProxy(@Nullable Object object) {
+		return (object instanceof SpringProxy && (Proxy.isProxyClass(object.getClass()) ||
+				object.getClass().getName().contains(ClassUtils.CGLIB_CLASS_SEPARATOR)));
 	}
 
 	/**
@@ -78,7 +78,7 @@ public abstract class AopUtils {
 	 * @param object the object to check
 	 * @see java.lang.reflect.Proxy#isProxyClass
 	 */
-	public static boolean isJdkDynamicProxy(Object object) {
+	public static boolean isJdkDynamicProxy(@Nullable Object object) {
 		return (object instanceof SpringProxy && Proxy.isProxyClass(object.getClass()));
 	}
 
@@ -90,8 +90,9 @@ public abstract class AopUtils {
 	 * @param object the object to check
 	 * @see ClassUtils#isCglibProxy(Object)
 	 */
-	public static boolean isCglibProxy(Object object) {
-		return (object instanceof SpringProxy && ClassUtils.isCglibProxy(object));
+	public static boolean isCglibProxy(@Nullable Object object) {
+		return (object instanceof SpringProxy &&
+				object.getClass().getName().contains(ClassUtils.CGLIB_CLASS_SEPARATOR));
 	}
 
 	/**
@@ -192,7 +193,8 @@ public abstract class AopUtils {
 	 * @see org.springframework.util.ClassUtils#getMostSpecificMethod
 	 */
 	public static Method getMostSpecificMethod(Method method, @Nullable Class<?> targetClass) {
-		Method resolvedMethod = ClassUtils.getMostSpecificMethod(method, targetClass);
+		Class<?> specificTargetClass = (targetClass != null ? ClassUtils.getUserClass(targetClass) : null);
+		Method resolvedMethod = ClassUtils.getMostSpecificMethod(method, specificTargetClass);
 		// If we are dealing with method with generic parameters, find the original method.
 		return BridgeMethodResolver.findBridgedMethod(resolvedMethod);
 	}
@@ -236,13 +238,17 @@ public abstract class AopUtils {
 			introductionAwareMethodMatcher = (IntroductionAwareMethodMatcher) methodMatcher;
 		}
 
-		Set<Class<?>> classes = new LinkedHashSet<>(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
-		classes.add(targetClass);
+		Set<Class<?>> classes = new LinkedHashSet<>();
+		if (!Proxy.isProxyClass(targetClass)) {
+			classes.add(ClassUtils.getUserClass(targetClass));
+		}
+		classes.addAll(ClassUtils.getAllInterfacesForClassAsSet(targetClass));
+
 		for (Class<?> clazz : classes) {
 			Method[] methods = ReflectionUtils.getAllDeclaredMethods(clazz);
 			for (Method method : methods) {
-				if ((introductionAwareMethodMatcher != null &&
-						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions)) ||
+				if (introductionAwareMethodMatcher != null ?
+						introductionAwareMethodMatcher.matches(method, targetClass, hasIntroductions) :
 						methodMatcher.matches(method, targetClass)) {
 					return true;
 				}
@@ -300,7 +306,7 @@ public abstract class AopUtils {
 		if (candidateAdvisors.isEmpty()) {
 			return candidateAdvisors;
 		}
-		List<Advisor> eligibleAdvisors = new LinkedList<>();
+		List<Advisor> eligibleAdvisors = new ArrayList<>();
 		for (Advisor candidate : candidateAdvisors) {
 			if (candidate instanceof IntroductionAdvisor && canApply(candidate, clazz)) {
 				eligibleAdvisors.add(candidate);

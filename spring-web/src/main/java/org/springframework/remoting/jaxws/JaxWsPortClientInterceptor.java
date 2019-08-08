@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -65,34 +65,46 @@ import org.springframework.util.StringUtils;
 public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 		implements MethodInterceptor, BeanClassLoaderAware, InitializingBean {
 
+	@Nullable
 	private Service jaxWsService;
 
+	@Nullable
 	private String portName;
 
+	@Nullable
 	private String username;
 
+	@Nullable
 	private String password;
 
+	@Nullable
 	private String endpointAddress;
 
 	private boolean maintainSession;
 
 	private boolean useSoapAction;
 
+	@Nullable
 	private String soapActionUri;
 
+	@Nullable
 	private Map<String, Object> customProperties;
 
+	@Nullable
 	private WebServiceFeature[] portFeatures;
 
+	@Nullable
 	private Class<?> serviceInterface;
 
 	private boolean lookupServiceOnStartup = true;
 
+	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
+	@Nullable
 	private QName portQName;
 
+	@Nullable
 	private Object portStub;
 
 	private final Object preparationMonitor = new Object();
@@ -107,7 +119,7 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * @see #setServiceName
 	 * @see org.springframework.jndi.JndiObjectFactoryBean
 	 */
-	public void setJaxWsService(Service jaxWsService) {
+	public void setJaxWsService(@Nullable Service jaxWsService) {
 		this.jaxWsService = jaxWsService;
 	}
 
@@ -123,7 +135,7 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * Set the name of the port.
 	 * Corresponds to the "wsdl:port" name.
 	 */
-	public void setPortName(String portName) {
+	public void setPortName(@Nullable String portName) {
 		this.portName = portName;
 	}
 
@@ -139,7 +151,7 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * Set the username to specify on the stub.
 	 * @see javax.xml.ws.BindingProvider#USERNAME_PROPERTY
 	 */
-	public void setUsername(String username) {
+	public void setUsername(@Nullable String username) {
 		this.username = username;
 	}
 
@@ -155,7 +167,7 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * Set the password to specify on the stub.
 	 * @see javax.xml.ws.BindingProvider#PASSWORD_PROPERTY
 	 */
-	public void setPassword(String password) {
+	public void setPassword(@Nullable String password) {
 		this.password = password;
 	}
 
@@ -171,7 +183,7 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * Set the endpoint address to specify on the stub.
 	 * @see javax.xml.ws.BindingProvider#ENDPOINT_ADDRESS_PROPERTY
 	 */
-	public void setEndpointAddress(String endpointAddress) {
+	public void setEndpointAddress(@Nullable String endpointAddress) {
 		this.endpointAddress = endpointAddress;
 	}
 
@@ -217,7 +229,7 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * Set the SOAP action URI to specify on the stub.
 	 * @see javax.xml.ws.BindingProvider#SOAPACTION_URI_PROPERTY
 	 */
-	public void setSoapActionUri(String soapActionUri) {
+	public void setSoapActionUri(@Nullable String soapActionUri) {
 		this.soapActionUri = soapActionUri;
 	}
 
@@ -277,9 +289,9 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	/**
 	 * Set the interface of the service that this factory should create a proxy for.
 	 */
-	public void setServiceInterface(Class<?> serviceInterface) {
-		if (!serviceInterface.isInterface()) {
-			throw new IllegalArgumentException("'serviceInterface' must be an interface");
+	public void setServiceInterface(@Nullable Class<?> serviceInterface) {
+		if (serviceInterface != null) {
+			Assert.isTrue(serviceInterface.isInterface(), "'serviceInterface' must be an interface");
 		}
 		this.serviceInterface = serviceInterface;
 	}
@@ -307,13 +319,14 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * building a client proxy in the {@link JaxWsPortProxyFactoryBean} subclass.
 	 */
 	@Override
-	public void setBeanClassLoader(ClassLoader classLoader) {
+	public void setBeanClassLoader(@Nullable ClassLoader classLoader) {
 		this.beanClassLoader = classLoader;
 	}
 
 	/**
 	 * Return the bean ClassLoader to use for this interceptor.
 	 */
+	@Nullable
 	protected ClassLoader getBeanClassLoader() {
 		return this.beanClassLoader;
 	}
@@ -404,6 +417,7 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * @see #setPortName
 	 * @see #getQName
 	 */
+	@Nullable
 	protected final QName getPortQName() {
 		return this.portQName;
 	}
@@ -474,12 +488,14 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * Return the underlying JAX-WS port stub that this interceptor delegates to
 	 * for each method invocation on the proxy.
 	 */
+	@Nullable
 	protected Object getPortStub() {
 		return this.portStub;
 	}
 
 
 	@Override
+	@Nullable
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 		if (AopUtils.isToStringMethod(invocation.getMethod())) {
 			return "JAX-WS proxy for port [" + getPortName() + "] of service [" + getServiceName() + "]";
@@ -528,7 +544,7 @@ public class JaxWsPortClientInterceptor extends LocalJaxWsServiceFactory
 	 * @see #getPortStub()
 	 */
 	@Nullable
-	protected Object doInvoke(MethodInvocation invocation, Object portStub) throws Throwable {
+	protected Object doInvoke(MethodInvocation invocation, @Nullable Object portStub) throws Throwable {
 		Method method = invocation.getMethod();
 		try {
 			return method.invoke(portStub, invocation.getArguments());

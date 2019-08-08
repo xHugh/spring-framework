@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -83,6 +83,7 @@ public class CaffeineCache extends AbstractValueAdaptingCache {
 	}
 
 	@Override
+	@Nullable
 	public ValueWrapper get(Object key) {
 		if (this.cache instanceof LoadingCache) {
 			Object value = ((LoadingCache<Object, Object>) this.cache).get(key);
@@ -99,6 +100,7 @@ public class CaffeineCache extends AbstractValueAdaptingCache {
 	}
 
 	@Override
+	@Nullable
 	protected Object lookup(Object key) {
 		return this.cache.getIfPresent(key);
 	}
@@ -122,13 +124,26 @@ public class CaffeineCache extends AbstractValueAdaptingCache {
 	}
 
 	@Override
+	public boolean evictIfPresent(Object key) {
+		return (this.cache.asMap().remove(key) != null);
+	}
+
+	@Override
 	public void clear() {
 		this.cache.invalidateAll();
+	}
+
+	@Override
+	public boolean invalidate() {
+		boolean notEmpty = !this.cache.asMap().isEmpty();
+		this.cache.invalidateAll();
+		return notEmpty;
 	}
 
 
 	private class PutIfAbsentFunction implements Function<Object, Object> {
 
+		@Nullable
 		private final Object value;
 
 		private boolean called;
@@ -156,10 +171,10 @@ public class CaffeineCache extends AbstractValueAdaptingCache {
 		@Override
 		public Object apply(Object o) {
 			try {
-				return toStoreValue(valueLoader.call());
+				return toStoreValue(this.valueLoader.call());
 			}
 			catch (Exception ex) {
-				throw new ValueRetrievalException(o, valueLoader, ex);
+				throw new ValueRetrievalException(o, this.valueLoader, ex);
 			}
 		}
 	}

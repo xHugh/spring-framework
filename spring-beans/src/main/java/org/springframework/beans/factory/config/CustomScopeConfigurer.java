@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -46,10 +46,12 @@ import org.springframework.util.ClassUtils;
  */
 public class CustomScopeConfigurer implements BeanFactoryPostProcessor, BeanClassLoaderAware, Ordered {
 
+	@Nullable
 	private Map<String, Object> scopes;
 
 	private int order = Ordered.LOWEST_PRECEDENCE;
 
+	@Nullable
 	private ClassLoader beanClassLoader = ClassUtils.getDefaultClassLoader();
 
 
@@ -95,9 +97,7 @@ public class CustomScopeConfigurer implements BeanFactoryPostProcessor, BeanClas
 	@Override
 	public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
 		if (this.scopes != null) {
-			for (Map.Entry<String, Object> entry : this.scopes.entrySet()) {
-				String scopeKey = entry.getKey();
-				Object value = entry.getValue();
+			this.scopes.forEach((scopeKey, value) -> {
 				if (value instanceof Scope) {
 					beanFactory.registerScope(scopeKey, (Scope) value);
 				}
@@ -116,7 +116,7 @@ public class CustomScopeConfigurer implements BeanFactoryPostProcessor, BeanClas
 							scopeKey + "] is not an instance of required type [" + Scope.class.getName() +
 							"] or a corresponding Class or String value indicating a Scope implementation");
 				}
-			}
+			});
 		}
 	}
 

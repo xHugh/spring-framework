@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,6 @@
 package org.springframework.web.filter;
 
 import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -82,14 +81,18 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
  */
 public class DelegatingFilterProxy extends GenericFilterBean {
 
+	@Nullable
 	private String contextAttribute;
 
+	@Nullable
 	private WebApplicationContext webApplicationContext;
 
+	@Nullable
 	private String targetBeanName;
 
 	private boolean targetFilterLifecycle = false;
 
+	@Nullable
 	private volatile Filter delegate;
 
 	private final Object delegateMonitor = new Object();
@@ -117,7 +120,7 @@ public class DelegatingFilterProxy extends GenericFilterBean {
 	 * @see #setEnvironment(org.springframework.core.env.Environment)
 	 */
 	public DelegatingFilterProxy(Filter delegate) {
-		Assert.notNull(delegate, "delegate Filter object must not be null");
+		Assert.notNull(delegate, "Delegate Filter must not be null");
 		this.delegate = delegate;
 	}
 
@@ -159,7 +162,7 @@ public class DelegatingFilterProxy extends GenericFilterBean {
 	 * @see #setEnvironment(org.springframework.core.env.Environment)
 	 */
 	public DelegatingFilterProxy(String targetBeanName, @Nullable WebApplicationContext wac) {
-		Assert.hasText(targetBeanName, "target Filter bean name must not be null or empty");
+		Assert.hasText(targetBeanName, "Target Filter bean name must not be null or empty");
 		this.setTargetBeanName(targetBeanName);
 		this.webApplicationContext = wac;
 		if (wac != null) {
@@ -171,7 +174,7 @@ public class DelegatingFilterProxy extends GenericFilterBean {
 	 * Set the name of the ServletContext attribute which should be used to retrieve the
 	 * {@link WebApplicationContext} from which to load the delegate {@link Filter} bean.
 	 */
-	public void setContextAttribute(String contextAttribute) {
+	public void setContextAttribute(@Nullable String contextAttribute) {
 		this.contextAttribute = contextAttribute;
 	}
 
@@ -190,13 +193,14 @@ public class DelegatingFilterProxy extends GenericFilterBean {
 	 * <p>By default, the {@code filter-name} as specified for the
 	 * DelegatingFilterProxy in {@code web.xml} will be used.
 	 */
-	public void setTargetBeanName(String targetBeanName) {
+	public void setTargetBeanName(@Nullable String targetBeanName) {
 		this.targetBeanName = targetBeanName;
 	}
 
 	/**
 	 * Return the name of the target bean in the Spring application context.
 	 */
+	@Nullable
 	protected String getTargetBeanName() {
 		return this.targetBeanName;
 	}
@@ -249,15 +253,16 @@ public class DelegatingFilterProxy extends GenericFilterBean {
 		Filter delegateToUse = this.delegate;
 		if (delegateToUse == null) {
 			synchronized (this.delegateMonitor) {
-				if (this.delegate == null) {
+				delegateToUse = this.delegate;
+				if (delegateToUse == null) {
 					WebApplicationContext wac = findWebApplicationContext();
 					if (wac == null) {
 						throw new IllegalStateException("No WebApplicationContext found: " +
 								"no ContextLoaderListener or DispatcherServlet registered?");
 					}
-					this.delegate = initDelegate(wac);
+					delegateToUse = initDelegate(wac);
 				}
-				delegateToUse = this.delegate;
+				this.delegate = delegateToUse;
 			}
 		}
 
@@ -327,7 +332,9 @@ public class DelegatingFilterProxy extends GenericFilterBean {
 	 * @see javax.servlet.Filter#init(javax.servlet.FilterConfig)
 	 */
 	protected Filter initDelegate(WebApplicationContext wac) throws ServletException {
-		Filter delegate = wac.getBean(getTargetBeanName(), Filter.class);
+		String targetBeanName = getTargetBeanName();
+		Assert.state(targetBeanName != null, "No target bean name set");
+		Filter delegate = wac.getBean(targetBeanName, Filter.class);
 		if (isTargetFilterLifecycle()) {
 			delegate.init(getFilterConfig());
 		}

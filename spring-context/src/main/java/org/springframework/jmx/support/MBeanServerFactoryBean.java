@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -58,12 +58,15 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 
 	private boolean locateExistingServerIfPossible = false;
 
+	@Nullable
 	private String agentId;
 
+	@Nullable
 	private String defaultDomain;
 
 	private boolean registerWithFactory = true;
 
+	@Nullable
 	private MBeanServer server;
 
 	private boolean newlyRegistered = false;
@@ -132,7 +135,7 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 				if (this.agentId != null) {
 					throw ex;
 				}
-				logger.info("No existing MBeanServer found - creating new one");
+				logger.debug("No existing MBeanServer found - creating new one");
 			}
 		}
 
@@ -182,6 +185,7 @@ public class MBeanServerFactoryBean implements FactoryBean<MBeanServer>, Initial
 
 
 	@Override
+	@Nullable
 	public MBeanServer getObject() {
 		return this.server;
 	}

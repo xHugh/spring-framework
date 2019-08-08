@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ResourceUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -46,6 +47,7 @@ import org.springframework.util.StringUtils;
  */
 public class DefaultResourceLoader implements ResourceLoader {
 
+	@Nullable
 	private ClassLoader classLoader;
 
 	private final Set<ProtocolResolver> protocolResolvers = new LinkedHashSet<>(4);
@@ -90,6 +92,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 	 * @see ClassPathResource
 	 */
 	@Override
+	@Nullable
 	public ClassLoader getClassLoader() {
 		return (this.classLoader != null ? this.classLoader : ClassUtils.getDefaultClassLoader());
 	}
@@ -158,7 +161,7 @@ public class DefaultResourceLoader implements ResourceLoader {
 			try {
 				// Try to parse the location as a URL...
 				URL url = new URL(location);
-				return new UrlResource(url);
+				return (ResourceUtils.isFileURL(url) ? new FileUrlResource(url) : new UrlResource(url));
 			}
 			catch (MalformedURLException ex) {
 				// No URL -> resolve as resource path.

@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,14 +30,19 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @author Rob Harrop
  * @since 27.05.2003
+ * @param <K> the key type
+ * @param <V> the value type
  */
 @SuppressWarnings("serial")
 public class ManagedMap<K, V> extends LinkedHashMap<K, V> implements Mergeable, BeanMetadataElement {
 
+	@Nullable
 	private Object source;
 
+	@Nullable
 	private String keyTypeName;
 
+	@Nullable
 	private String valueTypeName;
 
 	private boolean mergeEnabled;
@@ -60,6 +65,7 @@ public class ManagedMap<K, V> extends LinkedHashMap<K, V> implements Mergeable, 
 	}
 
 	@Override
+	@Nullable
 	public Object getSource() {
 		return this.source;
 	}
@@ -67,13 +73,14 @@ public class ManagedMap<K, V> extends LinkedHashMap<K, V> implements Mergeable, 
 	/**
 	 * Set the default key type name (class name) to be used for this map.
 	 */
-	public void setKeyTypeName(String keyTypeName) {
+	public void setKeyTypeName(@Nullable String keyTypeName) {
 		this.keyTypeName = keyTypeName;
 	}
 
 	/**
 	 * Return the default key type name (class name) to be used for this map.
 	 */
+	@Nullable
 	public String getKeyTypeName() {
 		return this.keyTypeName;
 	}
@@ -81,13 +88,14 @@ public class ManagedMap<K, V> extends LinkedHashMap<K, V> implements Mergeable, 
 	/**
 	 * Set the default value type name (class name) to be used for this map.
 	 */
-	public void setValueTypeName(String valueTypeName) {
+	public void setValueTypeName(@Nullable String valueTypeName) {
 		this.valueTypeName = valueTypeName;
 	}
 
 	/**
 	 * Return the default value type name (class name) to be used for this map.
 	 */
+	@Nullable
 	public String getValueTypeName() {
 		return this.valueTypeName;
 	}

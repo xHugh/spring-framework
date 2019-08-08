@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,8 +49,10 @@ import org.springframework.util.MimeType;
  */
 public class MarshallingMessageConverter extends AbstractMessageConverter {
 
+	@Nullable
 	private Marshaller marshaller;
 
+	@Nullable
 	private Unmarshaller unmarshaller;
 
 
@@ -90,13 +92,14 @@ public class MarshallingMessageConverter extends AbstractMessageConverter {
 	/**
 	 * Set the {@link Marshaller} to be used by this message converter.
 	 */
-	public void setMarshaller(Marshaller marshaller) {
+	public void setMarshaller(@Nullable Marshaller marshaller) {
 		this.marshaller = marshaller;
 	}
 
 	/**
 	 * Return the configured Marshaller.
 	 */
+	@Nullable
 	public Marshaller getMarshaller() {
 		return this.marshaller;
 	}
@@ -104,13 +107,14 @@ public class MarshallingMessageConverter extends AbstractMessageConverter {
 	/**
 	 * Set the {@link Unmarshaller} to be used by this message converter.
 	 */
-	public void setUnmarshaller(Unmarshaller unmarshaller) {
+	public void setUnmarshaller(@Nullable Unmarshaller unmarshaller) {
 		this.unmarshaller = unmarshaller;
 	}
 
 	/**
 	 * Return the configured unmarshaller.
 	 */
+	@Nullable
 	public Unmarshaller getUnmarshaller() {
 		return this.unmarshaller;
 	}
@@ -123,7 +127,7 @@ public class MarshallingMessageConverter extends AbstractMessageConverter {
 	}
 
 	@Override
-	protected boolean canConvertTo(Object payload, MessageHeaders headers) {
+	protected boolean canConvertTo(Object payload, @Nullable MessageHeaders headers) {
 		return (supportsMimeType(headers) && this.marshaller != null &&
 				this.marshaller.supports(payload.getClass()));
 	}
@@ -162,7 +166,9 @@ public class MarshallingMessageConverter extends AbstractMessageConverter {
 
 	@Override
 	@Nullable
-	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers, @Nullable Object conversionHint) {
+	protected Object convertToInternal(Object payload, @Nullable MessageHeaders headers,
+			@Nullable Object conversionHint) {
+
 		Assert.notNull(this.marshaller, "Property 'marshaller' is required");
 		try {
 			if (byte[].class == getSerializedPayloadClass()) {

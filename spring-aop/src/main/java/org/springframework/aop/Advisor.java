@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,8 +31,17 @@ import org.aopalliance.aop.Advice;
  * implemented using interception.
  *
  * @author Rod Johnson
+ * @author Juergen Hoeller
  */
 public interface Advisor {
+
+	/**
+	 * Common placeholder for an empty {@code Advice} to be returned from
+	 * {@link #getAdvice()} if no proper advice has been configured (yet).
+	 * @since 5.0
+	 */
+	Advice EMPTY_ADVICE = new Advice() {};
+
 
 	/**
 	 * Return the advice part of this aspect. An advice may be an

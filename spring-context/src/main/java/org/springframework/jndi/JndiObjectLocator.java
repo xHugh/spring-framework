@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import javax.naming.NamingException;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -48,8 +49,10 @@ import org.springframework.util.StringUtils;
  */
 public abstract class JndiObjectLocator extends JndiLocatorSupport implements InitializingBean {
 
+	@Nullable
 	private String jndiName;
 
+	@Nullable
 	private Class<?> expectedType;
 
 
@@ -59,13 +62,14 @@ public abstract class JndiObjectLocator extends JndiLocatorSupport implements In
 	 * @param jndiName the JNDI name to look up
 	 * @see #setResourceRef
 	 */
-	public void setJndiName(String jndiName) {
+	public void setJndiName(@Nullable String jndiName) {
 		this.jndiName = jndiName;
 	}
 
 	/**
 	 * Return the JNDI name to look up.
 	 */
+	@Nullable
 	public String getJndiName() {
 		return this.jndiName;
 	}
@@ -99,13 +103,15 @@ public abstract class JndiObjectLocator extends JndiLocatorSupport implements In
 	 * Perform the actual JNDI lookup for this locator's target resource.
 	 * @return the located target object
 	 * @throws NamingException if the JNDI lookup failed or if the
-	 * located JNDI object is not assigable to the expected type
+	 * located JNDI object is not assignable to the expected type
 	 * @see #setJndiName
 	 * @see #setExpectedType
 	 * @see #lookup(String, Class)
 	 */
 	protected Object lookup() throws NamingException {
-		return lookup(getJndiName(), getExpectedType());
+		String jndiName = getJndiName();
+		Assert.state(jndiName != null, "No JNDI name specified");
+		return lookup(jndiName, getExpectedType());
 	}
 
 }

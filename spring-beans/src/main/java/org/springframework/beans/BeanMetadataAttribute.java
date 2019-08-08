@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,8 +31,10 @@ public class BeanMetadataAttribute implements BeanMetadataElement {
 
 	private final String name;
 
+	@Nullable
 	private final Object value;
 
+	@Nullable
 	private Object source;
 
 
@@ -58,6 +60,7 @@ public class BeanMetadataAttribute implements BeanMetadataElement {
 	/**
 	 * Return the value of the attribute.
 	 */
+	@Nullable
 	public Object getValue() {
 		return this.value;
 	}
@@ -71,13 +74,14 @@ public class BeanMetadataAttribute implements BeanMetadataElement {
 	}
 
 	@Override
+	@Nullable
 	public Object getSource() {
 		return this.source;
 	}
 
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		if (this == other) {
 			return true;
 		}

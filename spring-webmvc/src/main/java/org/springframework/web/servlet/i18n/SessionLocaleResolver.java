@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +18,6 @@ package org.springframework.web.servlet.i18n;
 
 import java.util.Locale;
 import java.util.TimeZone;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -128,6 +127,7 @@ public class SessionLocaleResolver extends AbstractLocaleContextResolver {
 				return locale;
 			}
 			@Override
+			@Nullable
 			public TimeZone getTimeZone() {
 				TimeZone timeZone = (TimeZone) WebUtils.getSessionAttribute(request, timeZoneAttributeName);
 				if (timeZone == null) {
@@ -139,7 +139,9 @@ public class SessionLocaleResolver extends AbstractLocaleContextResolver {
 	}
 
 	@Override
-	public void setLocaleContext(HttpServletRequest request, HttpServletResponse response, @Nullable LocaleContext localeContext) {
+	public void setLocaleContext(HttpServletRequest request, @Nullable HttpServletResponse response,
+			@Nullable LocaleContext localeContext) {
+
 		Locale locale = null;
 		TimeZone timeZone = null;
 		if (localeContext != null) {

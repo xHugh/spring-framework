@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,6 +43,7 @@ public class WebSocketConnectionManager extends ConnectionManagerSupport {
 
 	private final WebSocketHandler webSocketHandler;
 
+	@Nullable
 	private WebSocketSession webSocketSession;
 
 	private WebSocketHttpHeaders headers = new WebSocketHttpHeaders();
@@ -85,7 +86,7 @@ public class WebSocketConnectionManager extends ConnectionManagerSupport {
 	/**
 	 * Set the origin to use.
 	 */
-	public void setOrigin(String origin) {
+	public void setOrigin(@Nullable String origin) {
 		this.headers.setOrigin(origin);
 	}
 
@@ -115,16 +116,16 @@ public class WebSocketConnectionManager extends ConnectionManagerSupport {
 
 	@Override
 	public void startInternal() {
-		if (this.client instanceof Lifecycle && !((Lifecycle) client).isRunning()) {
-			((Lifecycle) client).start();
+		if (this.client instanceof Lifecycle && !((Lifecycle) this.client).isRunning()) {
+			((Lifecycle) this.client).start();
 		}
 		super.startInternal();
 	}
 
 	@Override
 	public void stopInternal() throws Exception {
-		if (this.client instanceof Lifecycle && ((Lifecycle) client).isRunning()) {
-			((Lifecycle) client).stop();
+		if (this.client instanceof Lifecycle && ((Lifecycle) this.client).isRunning()) {
+			((Lifecycle) this.client).stop();
 		}
 		super.stopInternal();
 	}
@@ -140,7 +141,7 @@ public class WebSocketConnectionManager extends ConnectionManagerSupport {
 
 		future.addCallback(new ListenableFutureCallback<WebSocketSession>() {
 			@Override
-			public void onSuccess(WebSocketSession result) {
+			public void onSuccess(@Nullable WebSocketSession result) {
 				webSocketSession = result;
 				logger.info("Successfully connected");
 			}
@@ -153,7 +154,9 @@ public class WebSocketConnectionManager extends ConnectionManagerSupport {
 
 	@Override
 	protected void closeConnection() throws Exception {
-		this.webSocketSession.close();
+		if (this.webSocketSession != null) {
+			this.webSocketSession.close();
+		}
 	}
 
 	@Override

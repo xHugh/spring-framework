@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,6 +29,7 @@ import org.springframework.test.context.CacheAwareContextLoaderDelegate;
 import org.springframework.test.context.MergedContextConfiguration;
 import org.springframework.test.context.TestContext;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * Default implementation of the {@link TestContext} interface.
@@ -50,10 +51,13 @@ public class DefaultTestContext implements TestContext {
 
 	private final Class<?> testClass;
 
+	@Nullable
 	private volatile Object testInstance;
 
+	@Nullable
 	private volatile Method testMethod;
 
+	@Nullable
 	private volatile Throwable testException;
 
 
@@ -92,13 +96,27 @@ public class DefaultTestContext implements TestContext {
 	}
 
 	/**
+	 * Determine if the {@linkplain ApplicationContext application context} for
+	 * this test context is present in the context cache.
+	 * @return {@code true} if the application context has already been loaded
+	 * and stored in the context cache
+	 * @since 5.2
+	 * @see #getApplicationContext()
+	 * @see CacheAwareContextLoaderDelegate#isContextLoaded
+	 */
+	@Override
+	public boolean hasApplicationContext() {
+		return this.cacheAwareContextLoaderDelegate.isContextLoaded(this.mergedContextConfiguration);
+	}
+
+	/**
 	 * Get the {@linkplain ApplicationContext application context} for this
 	 * test context.
 	 * <p>The default implementation delegates to the {@link CacheAwareContextLoaderDelegate}
 	 * that was supplied when this {@code TestContext} was constructed.
-	 * @see CacheAwareContextLoaderDelegate#loadContext
 	 * @throws IllegalStateException if the context returned by the context
-	 * loader delegate is not <em>active</em> (i.e., has been closed).
+	 * loader delegate is not <em>active</em> (i.e., has been closed)
+	 * @see CacheAwareContextLoaderDelegate#loadContext
 	 */
 	public ApplicationContext getApplicationContext() {
 		ApplicationContext context = this.cacheAwareContextLoaderDelegate.loadContext(this.mergedContextConfiguration);
@@ -106,7 +124,7 @@ public class DefaultTestContext implements TestContext {
 			@SuppressWarnings("resource")
 			ConfigurableApplicationContext cac = (ConfigurableApplicationContext) context;
 			Assert.state(cac.isActive(), () ->
-					"The ApplicationContext loaded for [" + mergedContextConfiguration +
+					"The ApplicationContext loaded for [" + this.mergedContextConfiguration +
 					"] is not active. This may be due to one of the following reasons: " +
 					"1) the context was closed programmatically by user code; " +
 					"2) the context was closed during parallel test execution either " +
@@ -133,15 +151,19 @@ public class DefaultTestContext implements TestContext {
 	}
 
 	public final Object getTestInstance() {
-		Assert.state(this.testInstance != null, "No test instance");
-		return this.testInstance;
+		Object testInstance = this.testInstance;
+		Assert.state(testInstance != null, "No test instance");
+		return testInstance;
 	}
 
 	public final Method getTestMethod() {
-		Assert.state(this.testMethod != null, "No test method");
-		return this.testMethod;
+		Method testMethod = this.testMethod;
+		Assert.state(testMethod != null, "No test method");
+		return testMethod;
 	}
 
+	@Override
+	@Nullable
 	public final Throwable getTestException() {
 		return this.testException;
 	}
@@ -166,12 +188,14 @@ public class DefaultTestContext implements TestContext {
 	}
 
 	@Override
+	@Nullable
 	public Object getAttribute(String name) {
 		Assert.notNull(name, "Name must not be null");
 		return this.attributes.get(name);
 	}
 
 	@Override
+	@Nullable
 	public Object removeAttribute(String name) {
 		Assert.notNull(name, "Name must not be null");
 		return this.attributes.remove(name);
@@ -186,7 +210,7 @@ public class DefaultTestContext implements TestContext {
 	@Override
 	public String[] attributeNames() {
 		synchronized (this.attributes) {
-			return this.attributes.keySet().stream().toArray(String[]::new);
+			return StringUtils.toStringArray(this.attributes.keySet());
 		}
 	}
 

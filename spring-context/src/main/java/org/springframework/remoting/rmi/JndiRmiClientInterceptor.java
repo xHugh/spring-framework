@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +35,7 @@ import org.springframework.remoting.RemoteLookupFailureException;
 import org.springframework.remoting.support.DefaultRemoteInvocationFactory;
 import org.springframework.remoting.support.RemoteInvocation;
 import org.springframework.remoting.support.RemoteInvocationFactory;
+import org.springframework.util.Assert;
 
 /**
  * {@link org.aopalliance.intercept.MethodInterceptor} for accessing RMI services
@@ -97,9 +98,8 @@ public class JndiRmiClientInterceptor extends JndiObjectLocator implements Metho
 	 * but can also be optional if the lookup returns a typed stub.
 	 */
 	public void setServiceInterface(Class<?> serviceInterface) {
-		if (serviceInterface != null && !serviceInterface.isInterface()) {
-			throw new IllegalArgumentException("'serviceInterface' must be an interface");
-		}
+		Assert.notNull(serviceInterface, "'serviceInterface' must not be null");
+		Assert.isTrue(serviceInterface.isInterface(), "'serviceInterface' must be an interface");
 		this.serviceInterface = serviceInterface;
 	}
 
@@ -321,8 +321,8 @@ public class JndiRmiClientInterceptor extends JndiObjectLocator implements Metho
 			if (logger.isDebugEnabled()) {
 				logger.debug("Could not connect to RMI service [" + getJndiName() + "] - retrying", ex);
 			}
-			else if (logger.isWarnEnabled()) {
-				logger.warn("Could not connect to RMI service [" + getJndiName() + "] - retrying");
+			else if (logger.isInfoEnabled()) {
+				logger.info("Could not connect to RMI service [" + getJndiName() + "] - retrying");
 			}
 			return refreshAndRetry(invocation);
 		}

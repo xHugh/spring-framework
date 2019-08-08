@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -35,6 +35,7 @@ import org.springframework.validation.DataBinder;
 @SuppressWarnings("serial")
 public class RedirectAttributesModelMap extends ModelMap implements RedirectAttributes {
 
+	@Nullable
 	private final DataBinder dataBinder;
 
 	private final ModelMap flashAttributes = new ModelMap();
@@ -110,9 +111,7 @@ public class RedirectAttributesModelMap extends ModelMap implements RedirectAttr
 	@Override
 	public RedirectAttributesModelMap addAllAttributes(@Nullable Map<String, ?> attributes) {
 		if (attributes != null) {
-			for (String key : attributes.keySet()) {
-				addAttribute(key, attributes.get(key));
-			}
+			attributes.forEach(this::addAttribute);
 		}
 		return this;
 	}
@@ -124,11 +123,11 @@ public class RedirectAttributesModelMap extends ModelMap implements RedirectAttr
 	@Override
 	public RedirectAttributesModelMap mergeAttributes(@Nullable Map<String, ?> attributes) {
 		if (attributes != null) {
-			for (String key : attributes.keySet()) {
+			attributes.forEach((key, attribute) -> {
 				if (!containsKey(key)) {
-					addAttribute(key, attributes.get(key));
+					addAttribute(key, attribute);
 				}
-			}
+			});
 		}
 		return this;
 	}
@@ -154,9 +153,7 @@ public class RedirectAttributesModelMap extends ModelMap implements RedirectAttr
 	@Override
 	public void putAll(@Nullable Map<? extends String, ? extends Object> map) {
 		if (map != null) {
-			for (String key : map.keySet()) {
-				put(key, formatValue(map.get(key)));
-			}
+			map.forEach((key, value) -> put(key, formatValue(value)));
 		}
 	}
 

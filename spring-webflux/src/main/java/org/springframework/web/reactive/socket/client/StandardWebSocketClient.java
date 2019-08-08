@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,8 +24,11 @@ import javax.websocket.ClientEndpointConfig.Configurator;
 import javax.websocket.ContainerProvider;
 import javax.websocket.Endpoint;
 import javax.websocket.HandshakeResponse;
+import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.MonoProcessor;
 import reactor.core.scheduler.Schedulers;
@@ -46,7 +49,10 @@ import org.springframework.web.reactive.socket.adapter.StandardWebSocketSession;
  * @since 5.0
  * @see <a href="https://www.jcp.org/en/jsr/detail?id=356">https://www.jcp.org/en/jsr/detail?id=356</a>
  */
-public class StandardWebSocketClient extends WebSocketClientSupport implements WebSocketClient {
+public class StandardWebSocketClient implements WebSocketClient {
+
+	private static final Log logger = LogFactory.getLog(StandardWebSocketClient.class);
+
 
 	private final DataBufferFactory bufferFactory = new DefaultDataBufferFactory();
 
@@ -93,7 +99,10 @@ public class StandardWebSocketClient extends WebSocketClientSupport implements W
 		MonoProcessor<Void> completionMono = MonoProcessor.create();
 		return Mono.fromCallable(
 				() -> {
-					List<String> protocols = beforeHandshake(url, requestHeaders, handler);
+					if (logger.isDebugEnabled()) {
+						logger.debug("Connecting to " + url);
+					}
+					List<String> protocols = handler.getSubProtocols();
 					DefaultConfigurator configurator = new DefaultConfigurator(requestHeaders);
 					Endpoint endpoint = createEndpoint(url, handler, completionMono, configurator);
 					ClientEndpointConfig config = createEndpointConfig(configurator, protocols);
@@ -106,11 +115,20 @@ public class StandardWebSocketClient extends WebSocketClientSupport implements W
 	private StandardWebSocketHandlerAdapter createEndpoint(URI url, WebSocketHandler handler,
 			MonoProcessor<Void> completion, DefaultConfigurator configurator) {
 
-		return new StandardWebSocketHandlerAdapter(handler, session -> {
-			HttpHeaders responseHeaders = configurator.getResponseHeaders();
-			HandshakeInfo info = afterHandshake(url, responseHeaders);
-			return new StandardWebSocketSession(session, info, this.bufferFactory, completion);
-		});
+		return new StandardWebSocketHandlerAdapter(handler, session ->
+				createWebSocketSession(session, createHandshakeInfo(url, configurator), completion));
+	}
+
+	private HandshakeInfo createHandshakeInfo(URI url, DefaultConfigurator configurator) {
+		HttpHeaders responseHeaders = configurator.getResponseHeaders();
+		String protocol = responseHeaders.getFirst("Sec-WebSocket-Protocol");
+		return new HandshakeInfo(url, responseHeaders, Mono.empty(), protocol);
+	}
+
+	protected StandardWebSocketSession createWebSocketSession(Session session, HandshakeInfo info,
+			MonoProcessor<Void> completion) {
+
+		return new StandardWebSocketSession(session, info, this.bufferFactory, completion);
 	}
 
 	private ClientEndpointConfig createEndpointConfig(Configurator configurator, List<String> subProtocols) {
@@ -118,6 +136,10 @@ public class StandardWebSocketClient extends WebSocketClientSupport implements W
 				.configurator(configurator)
 				.preferredSubprotocols(subProtocols)
 				.build();
+	}
+
+	protected DataBufferFactory bufferFactory() {
+		return this.bufferFactory;
 	}
 
 

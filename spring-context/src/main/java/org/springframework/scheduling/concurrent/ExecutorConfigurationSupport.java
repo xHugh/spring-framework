@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,9 @@
 package org.springframework.scheduling.concurrent;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -31,9 +33,9 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.lang.Nullable;
 
 /**
- * Base class for classes that are setting up a
- * {@code java.util.concurrent.ExecutorService}
- * (typically a {@link java.util.concurrent.ThreadPoolExecutor}).
+ * Base class for setting up a {@link java.util.concurrent.ExecutorService}
+ * (typically a {@link java.util.concurrent.ThreadPoolExecutor} or
+ * {@link java.util.concurrent.ScheduledThreadPoolExecutor}).
  * Defines common configuration settings and common lifecycle handling.
  *
  * @author Juergen Hoeller
@@ -41,6 +43,7 @@ import org.springframework.lang.Nullable;
  * @see java.util.concurrent.ExecutorService
  * @see java.util.concurrent.Executors
  * @see java.util.concurrent.ThreadPoolExecutor
+ * @see java.util.concurrent.ScheduledThreadPoolExecutor
  */
 @SuppressWarnings("serial")
 public abstract class ExecutorConfigurationSupport extends CustomizableThreadFactory
@@ -58,8 +61,10 @@ public abstract class ExecutorConfigurationSupport extends CustomizableThreadFac
 
 	private int awaitTerminationSeconds = 0;
 
+	@Nullable
 	private String beanName;
 
+	@Nullable
 	private ExecutorService executor;
 
 
@@ -82,7 +87,7 @@ public abstract class ExecutorConfigurationSupport extends CustomizableThreadFac
 	}
 
 	@Override
-	public void setThreadNamePrefix(String threadNamePrefix) {
+	public void setThreadNamePrefix(@Nullable String threadNamePrefix) {
 		super.setThreadNamePrefix(threadNamePrefix);
 		this.threadNamePrefixSet = true;
 	}
@@ -163,7 +168,7 @@ public abstract class ExecutorConfigurationSupport extends CustomizableThreadFac
 	 */
 	public void initialize() {
 		if (logger.isInfoEnabled()) {
-			logger.info("Initializing ExecutorService " + (this.beanName != null ? " '" + this.beanName + "'" : ""));
+			logger.info("Initializing ExecutorService" + (this.beanName != null ? " '" + this.beanName + "'" : ""));
 		}
 		if (!this.threadNamePrefixSet && this.beanName != null) {
 			setThreadNamePrefix(this.beanName + "-");
@@ -197,29 +202,46 @@ public abstract class ExecutorConfigurationSupport extends CustomizableThreadFac
 	 * Perform a shutdown on the underlying ExecutorService.
 	 * @see java.util.concurrent.ExecutorService#shutdown()
 	 * @see java.util.concurrent.ExecutorService#shutdownNow()
-	 * @see #awaitTerminationIfNecessary()
 	 */
 	public void shutdown() {
 		if (logger.isInfoEnabled()) {
 			logger.info("Shutting down ExecutorService" + (this.beanName != null ? " '" + this.beanName + "'" : ""));
 		}
-		if (this.waitForTasksToCompleteOnShutdown) {
-			this.executor.shutdown();
+		if (this.executor != null) {
+			if (this.waitForTasksToCompleteOnShutdown) {
+				this.executor.shutdown();
+			}
+			else {
+				for (Runnable remainingTask : this.executor.shutdownNow()) {
+					cancelRemainingTask(remainingTask);
+				}
+			}
+			awaitTerminationIfNecessary(this.executor);
 		}
-		else {
-			this.executor.shutdownNow();
+	}
+
+	/**
+	 * Cancel the given remaining task which never commended execution,
+	 * as returned from {@link ExecutorService#shutdownNow()}.
+	 * @param task the task to cancel (typically a {@link RunnableFuture})
+	 * @since 5.0.5
+	 * @see #shutdown()
+	 * @see RunnableFuture#cancel(boolean)
+	 */
+	protected void cancelRemainingTask(Runnable task) {
+		if (task instanceof Future) {
+			((Future<?>) task).cancel(true);
 		}
-		awaitTerminationIfNecessary();
 	}
 
 	/**
 	 * Wait for the executor to terminate, according to the value of the
 	 * {@link #setAwaitTerminationSeconds "awaitTerminationSeconds"} property.
 	 */
-	private void awaitTerminationIfNecessary() {
+	private void awaitTerminationIfNecessary(ExecutorService executor) {
 		if (this.awaitTerminationSeconds > 0) {
 			try {
-				if (!this.executor.awaitTermination(this.awaitTerminationSeconds, TimeUnit.SECONDS)) {
+				if (!executor.awaitTermination(this.awaitTerminationSeconds, TimeUnit.SECONDS)) {
 					if (logger.isWarnEnabled()) {
 						logger.warn("Timed out while waiting for executor" +
 								(this.beanName != null ? " '" + this.beanName + "'" : "") + " to terminate");

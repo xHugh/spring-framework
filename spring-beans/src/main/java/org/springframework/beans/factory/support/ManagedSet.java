@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,12 +30,15 @@ import org.springframework.lang.Nullable;
  * @author Juergen Hoeller
  * @author Rob Harrop
  * @since 21.01.2004
+ * @param <E> the element type
  */
 @SuppressWarnings("serial")
 public class ManagedSet<E> extends LinkedHashSet<E> implements Mergeable, BeanMetadataElement {
 
+	@Nullable
 	private Object source;
 
+	@Nullable
 	private String elementTypeName;
 
 	private boolean mergeEnabled;
@@ -58,6 +61,7 @@ public class ManagedSet<E> extends LinkedHashSet<E> implements Mergeable, BeanMe
 	}
 
 	@Override
+	@Nullable
 	public Object getSource() {
 		return this.source;
 	}
@@ -65,13 +69,14 @@ public class ManagedSet<E> extends LinkedHashSet<E> implements Mergeable, BeanMe
 	/**
 	 * Set the default element type name (class name) to be used for this set.
 	 */
-	public void setElementTypeName(String elementTypeName) {
+	public void setElementTypeName(@Nullable String elementTypeName) {
 		this.elementTypeName = elementTypeName;
 	}
 
 	/**
 	 * Return the default element type name (class name) to be used for this set.
 	 */
+	@Nullable
 	public String getElementTypeName() {
 		return this.elementTypeName;
 	}

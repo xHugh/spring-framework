@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -114,6 +114,7 @@ import org.springframework.util.StringUtils;
  * returning {@code null} in the case that the parameter names cannot be discovered.
  *
  * @author Adrian Colyer
+ * @author Juergen Hoeller
  * @since 2.0
  */
 public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscoverer {
@@ -155,32 +156,29 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	}
 
 
-	private boolean raiseExceptions;
-
-	/**
-	 * If the advice is afterReturning, and binds the return value, this is the parameter name used.
-	 */
-	private String returningName;
-
-	/**
-	 * If the advice is afterThrowing, and binds the thrown value, this is the parameter name used.
-	 */
-	private String throwingName;
-
-	/**
-	 * The pointcut expression associated with the advice, as a simple String.
-	 */
+	/** The pointcut expression associated with the advice, as a simple String. */
+	@Nullable
 	private String pointcutExpression;
 
-	private Class<?>[] argumentTypes;
+	private boolean raiseExceptions;
 
-	private String[] parameterNameBindings;
+	/** If the advice is afterReturning, and binds the return value, this is the parameter name used. */
+	@Nullable
+	private String returningName;
+
+	/** If the advice is afterThrowing, and binds the thrown value, this is the parameter name used. */
+	@Nullable
+	private String throwingName;
+
+	private Class<?>[] argumentTypes = new Class<?>[0];
+
+	private String[] parameterNameBindings = new String[0];
 
 	private int numberOfRemainingUnboundArguments;
 
 
 	/**
-	 * Create a new discoverer that attempts to discover parameter names
+	 * Create a new discoverer that attempts to discover parameter names.
 	 * from the given pointcut expression.
 	 */
 	public AspectJAdviceParameterNameDiscoverer(@Nullable String pointcutExpression) {
@@ -202,7 +200,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * returning variable name must be specified.
 	 * @param returningName the name of the returning variable
 	 */
-	public void setReturningName(String returningName) {
+	public void setReturningName(@Nullable String returningName) {
 		this.returningName = returningName;
 	}
 
@@ -211,7 +209,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * throwing variable name must be specified.
 	 * @param throwingName the name of the throwing variable
 	 */
-	public void setThrowingName(String throwingName) {
+	public void setThrowingName(@Nullable String throwingName) {
 		this.throwingName = throwingName;
 	}
 
@@ -224,6 +222,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * @return the parameter names
 	 */
 	@Override
+	@Nullable
 	public String[] getParameterNames(Method method) {
 		this.argumentTypes = method.getParameterTypes();
 		this.numberOfRemainingUnboundArguments = this.argumentTypes.length;
@@ -273,15 +272,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 				}
 			}
 		}
-		catch (AmbiguousBindingException ambigEx) {
-			if (this.raiseExceptions) {
-				throw ambigEx;
-			}
-			else {
-				return null;
-			}
-		}
-		catch (IllegalArgumentException ex) {
+		catch (AmbiguousBindingException | IllegalArgumentException ex) {
 			if (this.raiseExceptions) {
 				throw ex;
 			}
@@ -312,6 +303,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	 * {@link #setRaiseExceptions(boolean) raiseExceptions} has been set to {@code true}
 	 */
 	@Override
+	@Nullable
 	public String[] getParameterNames(Constructor<?> ctor) {
 		if (this.raiseExceptions) {
 			throw new UnsupportedOperationException("An advice method can never be a constructor");
@@ -421,7 +413,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 		String[] tokens = StringUtils.tokenizeToStringArray(this.pointcutExpression, " ");
 		for (int i = 0; i < tokens.length; i++) {
 			String toMatch = tokens[i];
-			int firstParenIndex = toMatch.indexOf("(");
+			int firstParenIndex = toMatch.indexOf('(');
 			if (firstParenIndex != -1) {
 				toMatch = toMatch.substring(0, firstParenIndex);
 			}
@@ -582,7 +574,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 			if (toMatch.startsWith("!")) {
 				toMatch = toMatch.substring(1);
 			}
-			int firstParenIndex = toMatch.indexOf("(");
+			int firstParenIndex = toMatch.indexOf('(');
 			if (firstParenIndex != -1) {
 				toMatch = toMatch.substring(0, firstParenIndex);
 			}
@@ -677,7 +669,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 	}
 
 	/**
-	 * Match up args against unbound arguments of primitive types
+	 * Match up args against unbound arguments of primitive types.
 	 */
 	private void maybeBindPrimitiveArgsFromPointcutExpression() {
 		int numUnboundPrimitives = countNumberOfUnboundPrimitiveArguments();
@@ -781,6 +773,7 @@ public class AspectJAdviceParameterNameDiscoverer implements ParameterNameDiscov
 
 		private int numTokensConsumed;
 
+		@Nullable
 		private String text;
 
 		public PointcutBody(int tokens, @Nullable String text) {

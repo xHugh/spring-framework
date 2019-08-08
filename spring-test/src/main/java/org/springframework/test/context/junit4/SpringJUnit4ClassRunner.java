@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -104,10 +104,11 @@ public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 		Assert.state(ClassUtils.isPresent("org.junit.internal.Throwables", SpringJUnit4ClassRunner.class.getClassLoader()),
 				"SpringJUnit4ClassRunner requires JUnit 4.12 or higher.");
 
-		withRulesMethod = ReflectionUtils.findMethod(SpringJUnit4ClassRunner.class, "withRules",
+		Method method = ReflectionUtils.findMethod(SpringJUnit4ClassRunner.class, "withRules",
 				FrameworkMethod.class, Object.class, Statement.class);
-		Assert.state(withRulesMethod != null, "SpringJUnit4ClassRunner requires JUnit 4.12 or higher");
-		ReflectionUtils.makeAccessible(withRulesMethod);
+		Assert.state(method != null, "SpringJUnit4ClassRunner requires JUnit 4.12 or higher");
+		ReflectionUtils.makeAccessible(method);
+		withRulesMethod = method;
 	}
 
 
@@ -364,6 +365,9 @@ public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 	 * @see #getJUnitTimeout(FrameworkMethod)
 	 */
 	@Override
+	// Retain the following warning suppression for deprecation (even if Eclipse
+	// states it is unnecessary) since withPotentialTimeout(FrameworkMethod,Object,Statement)
+	// in BlockJUnit4ClassRunner has been deprecated.
 	@SuppressWarnings("deprecation")
 	protected Statement withPotentialTimeout(FrameworkMethod frameworkMethod, Object testInstance, Statement next) {
 		Statement statement = null;
@@ -396,7 +400,7 @@ public class SpringJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 	 */
 	protected long getJUnitTimeout(FrameworkMethod frameworkMethod) {
 		Test test = frameworkMethod.getAnnotation(Test.class);
-		return (test != null && test.timeout() > 0 ? test.timeout() : 0);
+		return (test == null ? 0 : Math.max(0, test.timeout()));
 	}
 
 	/**

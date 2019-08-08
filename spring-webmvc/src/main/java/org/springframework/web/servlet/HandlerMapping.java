@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -56,6 +56,22 @@ import org.springframework.lang.Nullable;
 public interface HandlerMapping {
 
 	/**
+	 * Name of the {@link HttpServletRequest} attribute that contains the mapped
+	 * handler for the best matching pattern.
+	 * @since 4.3.21
+	 */
+	String BEST_MATCHING_HANDLER_ATTRIBUTE = HandlerMapping.class.getName() + ".bestMatchingHandler";
+
+	/**
+	 * Name of the {@link HttpServletRequest} attribute that contains the path
+	 * used to look up the matching handler, which depending on the configured
+	 * {@link org.springframework.web.util.UrlPathHelper} could be the full path
+	 * or without the context path, decoded or not, etc.
+	 * @since 5.2
+	 */
+	String LOOKUP_PATH = HandlerMapping.class.getName() + ".lookupPath";
+
+	/**
 	 * Name of the {@link HttpServletRequest} attribute that contains the path
 	 * within the handler mapping, in case of a pattern match, or the full
 	 * relevant URI (typically within the DispatcherServlet's mapping) else.
@@ -96,11 +112,11 @@ public interface HandlerMapping {
 
 	/**
 	 * Name of the {@link HttpServletRequest} attribute that contains a map with
-	 * URI matrix variables.
+	 * URI variable names and a corresponding MultiValueMap of URI matrix
+	 * variables for each.
 	 * <p>Note: This attribute is not required to be supported by all
 	 * HandlerMapping implementations and may also not be present depending on
 	 * whether the HandlerMapping is configured to keep matrix variable content
-	 * in the request URI.
 	 */
 	String MATRIX_VARIABLES_ATTRIBUTE = HandlerMapping.class.getName() + ".matrixVariables";
 

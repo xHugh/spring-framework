@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -122,40 +122,56 @@ public class XStreamMarshaller extends AbstractMarshaller implements BeanClassLo
 	public static final String DEFAULT_ENCODING = "UTF-8";
 
 
+	@Nullable
 	private ReflectionProvider reflectionProvider;
 
+	@Nullable
 	private HierarchicalStreamDriver streamDriver;
 
+	@Nullable
 	private HierarchicalStreamDriver defaultDriver;
 
+	@Nullable
 	private Mapper mapper;
 
+	@Nullable
 	private Class<? extends MapperWrapper>[] mapperWrappers;
 
 	private ConverterLookup converterLookup = new DefaultConverterLookup();
 
 	private ConverterRegistry converterRegistry = (ConverterRegistry) this.converterLookup;
 
+	@Nullable
 	private ConverterMatcher[] converters;
 
+	@Nullable
 	private MarshallingStrategy marshallingStrategy;
 
+	@Nullable
 	private Integer mode;
 
+	@Nullable
 	private Map<String, ?> aliases;
 
+	@Nullable
 	private Map<String, ?> aliasesByType;
 
+	@Nullable
 	private Map<String, String> fieldAliases;
 
+	@Nullable
 	private Class<?>[] useAttributeForTypes;
 
+	@Nullable
 	private Map<?, ?> useAttributeFor;
 
+	@Nullable
 	private Map<Class<?>, String> implicitCollections;
 
+	@Nullable
 	private Map<Class<?>, String> omittedFields;
 
+	@Nullable
 	private Class<?>[] annotatedClasses;
 
 	private boolean autodetectAnnotations;
@@ -164,10 +180,12 @@ public class XStreamMarshaller extends AbstractMarshaller implements BeanClassLo
 
 	private NameCoder nameCoder = new XmlFriendlyNameCoder();
 
+	@Nullable
 	private Class<?>[] supportedClasses;
 
 	private ClassLoader beanClassLoader = new CompositeClassLoader();
 
+	@Nullable
 	private XStream xstream;
 
 
@@ -749,7 +767,7 @@ public class XStreamMarshaller extends AbstractMarshaller implements BeanClassLo
 		else {
 			throw new IllegalArgumentException("DOMSource contains neither Document nor Element");
 		}
-        return doUnmarshal(streamReader, null);
+		return doUnmarshal(streamReader, null);
 	}
 
 	@Override
@@ -765,7 +783,7 @@ public class XStreamMarshaller extends AbstractMarshaller implements BeanClassLo
 
 	@Override
 	protected Object unmarshalXmlStreamReader(XMLStreamReader streamReader) throws XmlMappingException {
-        return doUnmarshal(new StaxReader(new QNameMap(), streamReader, this.nameCoder), null);
+		return doUnmarshal(new StaxReader(new QNameMap(), streamReader, this.nameCoder), null);
 	}
 
 	@Override
@@ -782,12 +800,12 @@ public class XStreamMarshaller extends AbstractMarshaller implements BeanClassLo
 	}
 
 	public Object unmarshalInputStream(InputStream inputStream, @Nullable DataHolder dataHolder) throws XmlMappingException, IOException {
-        if (this.streamDriver != null) {
-            return doUnmarshal(this.streamDriver.createReader(inputStream), dataHolder);
-        }
-        else {
-		    return unmarshalReader(new InputStreamReader(inputStream, this.encoding), dataHolder);
-        }
+		if (this.streamDriver != null) {
+			return doUnmarshal(this.streamDriver.createReader(inputStream), dataHolder);
+		}
+		else {
+			return unmarshalReader(new InputStreamReader(inputStream, this.encoding), dataHolder);
+		}
 	}
 
 	@Override
@@ -799,30 +817,30 @@ public class XStreamMarshaller extends AbstractMarshaller implements BeanClassLo
 		return doUnmarshal(getDefaultDriver().createReader(reader), dataHolder);
 	}
 
-    /**
-     * Unmarshals the given graph to the given XStream HierarchicalStreamWriter.
-     * Converts exceptions using {@link #convertXStreamException}.
-     */
-    private Object doUnmarshal(HierarchicalStreamReader streamReader, @Nullable DataHolder dataHolder) {
-        try {
-            return getXStream().unmarshal(streamReader, null, dataHolder);
-        }
-        catch (Exception ex) {
-            throw convertXStreamException(ex, false);
-        }
-    }
+	/**
+	 * Unmarshals the given graph to the given XStream HierarchicalStreamWriter.
+	 * Converts exceptions using {@link #convertXStreamException}.
+	 */
+	private Object doUnmarshal(HierarchicalStreamReader streamReader, @Nullable DataHolder dataHolder) {
+		try {
+			return getXStream().unmarshal(streamReader, null, dataHolder);
+		}
+		catch (Exception ex) {
+			throw convertXStreamException(ex, false);
+		}
+	}
 
 
-    /**
-     * Convert the given XStream exception to an appropriate exception from the
-     * {@code org.springframework.oxm} hierarchy.
-     * <p>A boolean flag is used to indicate whether this exception occurs during marshalling or
-     * unmarshalling, since XStream itself does not make this distinction in its exception hierarchy.
-     * @param ex XStream exception that occurred
-     * @param marshalling indicates whether the exception occurs during marshalling ({@code true}),
-     * or unmarshalling ({@code false})
-     * @return the corresponding {@code XmlMappingException}
-     */
+	/**
+	 * Convert the given XStream exception to an appropriate exception from the
+	 * {@code org.springframework.oxm} hierarchy.
+	 * <p>A boolean flag is used to indicate whether this exception occurs during marshalling or
+	 * unmarshalling, since XStream itself does not make this distinction in its exception hierarchy.
+	 * @param ex the XStream exception that occurred
+	 * @param marshalling indicates whether the exception occurs during marshalling ({@code true}),
+	 * or unmarshalling ({@code false})
+	 * @return the corresponding {@code XmlMappingException}
+	 */
 	protected XmlMappingException convertXStreamException(Exception ex, boolean marshalling) {
 		if (ex instanceof StreamException || ex instanceof CannotResolveClassException ||
 				ex instanceof ConversionException) {

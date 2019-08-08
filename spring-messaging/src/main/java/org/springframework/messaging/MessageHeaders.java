@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -71,6 +71,9 @@ import org.springframework.util.IdGenerator;
  */
 public class MessageHeaders implements Map<String, Object>, Serializable {
 
+	/**
+	 * UUID for none.
+	 */
 	public static final UUID ID_VALUE_NONE = new UUID(0,0);
 
 	/**
@@ -81,12 +84,24 @@ public class MessageHeaders implements Map<String, Object>, Serializable {
 	 */
 	public static final String ID = "id";
 
+	/**
+	 * The key for the message timestamp.
+	 */
 	public static final String TIMESTAMP = "timestamp";
 
+	/**
+	 * The key for the message content type.
+	 */
 	public static final String CONTENT_TYPE = "contentType";
 
+	/**
+	 * The key for the message reply channel.
+	 */
 	public static final String REPLY_CHANNEL = "replyChannel";
 
+	/**
+	 * The key for the message error channel.
+	 */
 	public static final String ERROR_CHANNEL = "errorChannel";
 
 
@@ -96,7 +111,8 @@ public class MessageHeaders implements Map<String, Object>, Serializable {
 
 	private static final IdGenerator defaultIdGenerator = new AlternativeJdkIdGenerator();
 
-	private static volatile IdGenerator idGenerator = null;
+	@Nullable
+	private static volatile IdGenerator idGenerator;
 
 
 	private final Map<String, Object> headers;
@@ -148,7 +164,7 @@ public class MessageHeaders implements Map<String, Object>, Serializable {
 	 * @param keysToIgnore the keys of the entries to ignore
 	 */
 	private MessageHeaders(MessageHeaders original, Set<String> keysToIgnore) {
-		this.headers = new HashMap<>(original.headers.size() - keysToIgnore.size());
+		this.headers = new HashMap<>(original.headers.size());
 		original.headers.forEach((key, value) -> {
 			if (!keysToIgnore.contains(key)) {
 				this.headers.put(key, value);
@@ -162,7 +178,8 @@ public class MessageHeaders implements Map<String, Object>, Serializable {
 	}
 
 	protected static IdGenerator getIdGenerator() {
-		return (idGenerator != null ? idGenerator : defaultIdGenerator);
+		IdGenerator generator = idGenerator;
+		return (generator != null ? generator : defaultIdGenerator);
 	}
 
 	@Nullable
@@ -303,7 +320,7 @@ public class MessageHeaders implements Map<String, Object>, Serializable {
 	// equals, hashCode, toString
 
 	@Override
-	public boolean equals(Object other) {
+	public boolean equals(@Nullable Object other) {
 		return (this == other ||
 				(other instanceof MessageHeaders && this.headers.equals(((MessageHeaders) other).headers)));
 	}

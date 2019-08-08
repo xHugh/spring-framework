@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +30,7 @@ import org.springframework.lang.Nullable;
 /**
  * {@link PathMatcher} implementation for Ant-style path patterns.
  *
- * <p>Part of this mapping code has been kindly borrowed from <a href="http://ant.apache.org">Apache Ant</a>.
+ * <p>Part of this mapping code has been kindly borrowed from <a href="https://ant.apache.org">Apache Ant</a>.
  *
  * <p>The mapping matches URLs using the following rules:<br>
  * <ul>
@@ -72,7 +72,7 @@ import org.springframework.lang.Nullable;
  */
 public class AntPathMatcher implements PathMatcher {
 
-	/** Default path separator: "/" */
+	/** Default path separator: "/". */
 	public static final String DEFAULT_PATH_SEPARATOR = "/";
 
 	private static final int CACHE_TURNOFF_THRESHOLD = 65536;
@@ -90,6 +90,7 @@ public class AntPathMatcher implements PathMatcher {
 
 	private boolean trimTokens = false;
 
+	@Nullable
 	private volatile Boolean cachePatterns;
 
 	private final Map<String, String[]> tokenizedPatternCache = new ConcurrentHashMap<>(256);
@@ -167,8 +168,25 @@ public class AntPathMatcher implements PathMatcher {
 
 
 	@Override
-	public boolean isPattern(String path) {
-		return (path.indexOf('*') != -1 || path.indexOf('?') != -1);
+	public boolean isPattern(@Nullable String path) {
+		if (path == null) {
+			return false;
+		}
+		boolean uriVar = false;
+		for (int i = 0; i < path.length(); i++) {
+			char c = path.charAt(i);
+			if (c == '*' || c == '?') {
+				return true;
+			}
+			if (c == '{') {
+				uriVar = true;
+				continue;
+			}
+			if (c == '}' && uriVar) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Override
@@ -184,15 +202,15 @@ public class AntPathMatcher implements PathMatcher {
 	/**
 	 * Actually match the given {@code path} against the given {@code pattern}.
 	 * @param pattern the pattern to match against
-	 * @param path the path String to test
+	 * @param path the path to test
 	 * @param fullMatch whether a full pattern match is required (else a pattern match
 	 * as far as the given base path goes is sufficient)
 	 * @return {@code true} if the supplied {@code path} matched, {@code false} if it didn't
 	 */
-	protected boolean doMatch(String pattern, String path, boolean fullMatch,
+	protected boolean doMatch(String pattern, @Nullable String path, boolean fullMatch,
 			@Nullable Map<String, String> uriTemplateVariables) {
 
-		if (path.startsWith(this.pathSeparator) != pattern.startsWith(this.pathSeparator)) {
+		if (path == null || path.startsWith(this.pathSeparator) != pattern.startsWith(this.pathSeparator)) {
 			return false;
 		}
 
@@ -202,7 +220,6 @@ public class AntPathMatcher implements PathMatcher {
 		}
 
 		String[] pathDirs = tokenizePath(path);
-
 		int pattIdxStart = 0;
 		int pattIdxEnd = pattDirs.length - 1;
 		int pathIdxStart = 0;
@@ -400,7 +417,7 @@ public class AntPathMatcher implements PathMatcher {
 	}
 
 	/**
-	 * Tokenize the given path String into parts, based on this matcher's settings.
+	 * Tokenize the given path into parts, based on this matcher's settings.
 	 * @param path the path to tokenize
 	 * @return the tokenized path parts
 	 */
@@ -570,8 +587,8 @@ public class AntPathMatcher implements PathMatcher {
 		int dotPos2 = pattern2.indexOf('.');
 		String file2 = (dotPos2 == -1 ? pattern2 : pattern2.substring(0, dotPos2));
 		String ext2 = (dotPos2 == -1 ? "" : pattern2.substring(dotPos2));
-		boolean ext1All = (ext1.equals(".*") || ext1.equals(""));
-		boolean ext2All = (ext2.equals(".*") || ext2.equals(""));
+		boolean ext1All = (ext1.equals(".*") || ext1.isEmpty());
+		boolean ext2All = (ext2.equals(".*") || ext2.isEmpty());
 		if (!ext1All && !ext2All) {
 			throw new IllegalArgumentException("Cannot combine patterns: " + pattern1 + " vs " + pattern2);
 		}
@@ -597,7 +614,7 @@ public class AntPathMatcher implements PathMatcher {
 	/**
 	 * Given a full path, returns a {@link Comparator} suitable for sorting patterns in order of
 	 * explicitness.
-	 * <p>This{@code Comparator} will {@linkplain java.util.Collections#sort(List, Comparator) sort}
+	 * <p>This{@code Comparator} will {@linkplain java.util.List#sort(Comparator) sort}
 	 * a list so that more specific patterns (without uri templates or wild cards) come before
 	 * generic patterns. So given a list with the following patterns:
 	 * <ol>
@@ -749,8 +766,8 @@ public class AntPathMatcher implements PathMatcher {
 				return -1;
 			}
 
-			boolean pattern1EqualsPath = pattern1.equals(path);
-			boolean pattern2EqualsPath = pattern2.equals(path);
+			boolean pattern1EqualsPath = pattern1.equals(this.path);
+			boolean pattern2EqualsPath = pattern2.equals(this.path);
 			if (pattern1EqualsPath && pattern2EqualsPath) {
 				return 0;
 			}
@@ -761,7 +778,10 @@ public class AntPathMatcher implements PathMatcher {
 				return 1;
 			}
 
-			if (info1.isPrefixPattern() && info2.getDoubleWildcards() == 0) {
+			if (info1.isPrefixPattern() && info2.isPrefixPattern()) {
+				return info2.getLength() - info1.getLength();
+			}
+			else if (info1.isPrefixPattern() && info2.getDoubleWildcards() == 0) {
 				return 1;
 			}
 			else if (info2.isPrefixPattern() && info1.getDoubleWildcards() == 0) {
@@ -800,6 +820,7 @@ public class AntPathMatcher implements PathMatcher {
 		 */
 		private static class PatternInfo {
 
+			@Nullable
 			private final String pattern;
 
 			private int uriVars;
@@ -812,6 +833,7 @@ public class AntPathMatcher implements PathMatcher {
 
 			private boolean prefixPattern;
 
+			@Nullable
 			private Integer length;
 
 			public PatternInfo(@Nullable String pattern) {
@@ -828,26 +850,28 @@ public class AntPathMatcher implements PathMatcher {
 
 			protected void initCounters() {
 				int pos = 0;
-				while (pos < this.pattern.length()) {
-					if (this.pattern.charAt(pos) == '{') {
-						this.uriVars++;
-						pos++;
-					}
-					else if (this.pattern.charAt(pos) == '*') {
-						if (pos + 1 < this.pattern.length() && this.pattern.charAt(pos + 1) == '*') {
-							this.doubleWildcards++;
-							pos += 2;
-						}
-						else if (pos > 0 && !this.pattern.substring(pos - 1).equals(".*")) {
-							this.singleWildcards++;
+				if (this.pattern != null) {
+					while (pos < this.pattern.length()) {
+						if (this.pattern.charAt(pos) == '{') {
+							this.uriVars++;
 							pos++;
+						}
+						else if (this.pattern.charAt(pos) == '*') {
+							if (pos + 1 < this.pattern.length() && this.pattern.charAt(pos + 1) == '*') {
+								this.doubleWildcards++;
+								pos += 2;
+							}
+							else if (pos > 0 && !this.pattern.substring(pos - 1).equals(".*")) {
+								this.singleWildcards++;
+								pos++;
+							}
+							else {
+								pos++;
+							}
 						}
 						else {
 							pos++;
 						}
-					}
-					else {
-						pos++;
 					}
 				}
 			}
@@ -881,7 +905,8 @@ public class AntPathMatcher implements PathMatcher {
 			 */
 			public int getLength() {
 				if (this.length == null) {
-					this.length = VARIABLE_PATTERN.matcher(this.pattern).replaceAll("#").length();
+					this.length = (this.pattern != null ?
+							VARIABLE_PATTERN.matcher(this.pattern).replaceAll("#").length() : 0);
 				}
 				return this.length;
 			}

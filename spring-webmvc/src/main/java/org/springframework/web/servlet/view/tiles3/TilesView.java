@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,6 +32,7 @@ import org.apache.tiles.request.render.Renderer;
 import org.apache.tiles.request.servlet.ServletRequest;
 import org.apache.tiles.request.servlet.ServletUtil;
 
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -54,12 +55,14 @@ import org.springframework.web.servlet.view.AbstractUrlBasedView;
  */
 public class TilesView extends AbstractUrlBasedView {
 
+	@Nullable
 	private Renderer renderer;
 
 	private boolean exposeJstlAttributes = true;
 
 	private boolean alwaysInclude = false;
 
+	@Nullable
 	private ApplicationContext applicationContext;
 
 
@@ -107,23 +110,29 @@ public class TilesView extends AbstractUrlBasedView {
 
 	@Override
 	public boolean checkResource(final Locale locale) throws Exception {
+		Assert.state(this.renderer != null, "No Renderer set");
+
 		HttpServletRequest servletRequest = null;
 		RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
 		if (requestAttributes instanceof ServletRequestAttributes) {
 			servletRequest = ((ServletRequestAttributes) requestAttributes).getRequest();
 		}
+
 		Request request = new ServletRequest(this.applicationContext, servletRequest, null) {
 			@Override
 			public Locale getRequestLocale() {
 				return locale;
 			}
 		};
+
 		return this.renderer.isRenderable(getUrl(), request);
 	}
 
 	@Override
 	protected void renderMergedOutputModel(Map<String, Object> model, HttpServletRequest request,
 			HttpServletResponse response) throws Exception {
+
+		Assert.state(this.renderer != null, "No Renderer set");
 
 		exposeModelAsRequestAttributes(model, request);
 		if (this.exposeJstlAttributes) {

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,6 +41,7 @@ public class CustomizableThreadCreator implements Serializable {
 
 	private boolean daemon = false;
 
+	@Nullable
 	private ThreadGroup threadGroup;
 
 	private final AtomicInteger threadCount = new AtomicInteger(0);
@@ -127,7 +128,7 @@ public class CustomizableThreadCreator implements Serializable {
 	 * Specify the thread group that threads should be created in.
 	 * @see #setThreadGroupName
 	 */
-	public void setThreadGroup(ThreadGroup threadGroup) {
+	public void setThreadGroup(@Nullable ThreadGroup threadGroup) {
 		this.threadGroup = threadGroup;
 	}
 

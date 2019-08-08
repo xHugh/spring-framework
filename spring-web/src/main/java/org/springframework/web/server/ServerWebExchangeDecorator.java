@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2016 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,10 +18,11 @@ package org.springframework.web.server;
 import java.security.Principal;
 import java.time.Instant;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Function;
 
 import reactor.core.publisher.Mono;
 
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.i18n.LocaleContext;
 import org.springframework.http.codec.multipart.Part;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -77,11 +78,6 @@ public class ServerWebExchangeDecorator implements ServerWebExchange {
 	}
 
 	@Override
-	public <T> Optional<T> getAttribute(String name) {
-		return getDelegate().getAttribute(name);
-	}
-
-	@Override
 	public Mono<WebSession> getSession() {
 		return getDelegate().getSession();
 	}
@@ -94,6 +90,11 @@ public class ServerWebExchangeDecorator implements ServerWebExchange {
 	@Override
 	public LocaleContext getLocaleContext() {
 		return getDelegate().getLocaleContext();
+	}
+
+	@Override
+	public ApplicationContext getApplicationContext() {
+		return getDelegate().getApplicationContext();
 	}
 
 	@Override
@@ -126,6 +127,20 @@ public class ServerWebExchangeDecorator implements ServerWebExchange {
 		return getDelegate().checkNotModified(etag, lastModified);
 	}
 
+	@Override
+	public String transformUrl(String url) {
+		return getDelegate().transformUrl(url);
+	}
+
+	@Override
+	public void addUrlTransformer(Function<String, String> transformer) {
+		getDelegate().addUrlTransformer(transformer);
+	}
+
+	@Override
+	public String getLogPrefix() {
+		return getDelegate().getLogPrefix();
+	}
 
 	@Override
 	public String toString() {

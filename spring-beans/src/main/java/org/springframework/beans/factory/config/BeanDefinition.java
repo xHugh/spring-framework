@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -19,6 +19,7 @@ package org.springframework.beans.factory.config;
 import org.springframework.beans.BeanMetadataElement;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.core.AttributeAccessor;
+import org.springframework.core.ResolvableType;
 import org.springframework.lang.Nullable;
 
 /**
@@ -27,8 +28,8 @@ import org.springframework.lang.Nullable;
  * concrete implementations.
  *
  * <p>This is just a minimal interface: The main intention is to allow a
- * {@link BeanFactoryPostProcessor} such as {@link PropertyPlaceholderConfigurer}
- * to introspect and modify property values and other bean metadata.
+ * {@link BeanFactoryPostProcessor} to introspect and modify property values
+ * and other bean metadata.
  *
  * @author Juergen Hoeller
  * @author Rob Harrop
@@ -126,7 +127,8 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	void setScope(@Nullable String scope);
 
 	/**
-	 * Return the name of the current target scope for this bean.
+	 * Return the name of the current target scope for this bean,
+	 * or {@code null} if not known yet.
 	 */
 	@Nullable
 	String getScope();
@@ -148,7 +150,7 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	 * Set the names of the beans that this bean depends on being initialized.
 	 * The bean factory will guarantee that these beans get initialized first.
 	 */
-	void setDependsOn(String... dependsOn);
+	void setDependsOn(@Nullable String... dependsOn);
 
 	/**
 	 * Return the bean names that this bean depends on.
@@ -219,33 +221,64 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	ConstructorArgumentValues getConstructorArgumentValues();
 
 	/**
+	 * Return if there are constructor argument values defined for this bean.
+	 * @since 5.0.2
+	 */
+	default boolean hasConstructorArgumentValues() {
+		return !getConstructorArgumentValues().isEmpty();
+	}
+
+	/**
 	 * Return the property values to be applied to a new instance of the bean.
 	 * <p>The returned instance can be modified during bean factory post-processing.
 	 * @return the MutablePropertyValues object (never {@code null})
 	 */
 	MutablePropertyValues getPropertyValues();
 
-
-	// Read-only attributes
+	/**
+	 * Return if there are property values values defined for this bean.
+	 * @since 5.0.2
+	 */
+	default boolean hasPropertyValues() {
+		return !getPropertyValues().isEmpty();
+	}
 
 	/**
-	 * Return whether this a <b>Singleton</b>, with a single, shared instance
-	 * returned on all calls.
-	 * @see #SCOPE_SINGLETON
+	 * Set the name of the initializer method.
+	 * @since 5.1
 	 */
-	boolean isSingleton();
+	void setInitMethodName(@Nullable String initMethodName);
 
 	/**
-	 * Return whether this a <b>Prototype</b>, with an independent instance
-	 * returned for each call.
-	 * @see #SCOPE_PROTOTYPE
+	 * Return the name of the initializer method.
+	 * @since 5.1
 	 */
-	boolean isPrototype();
+	@Nullable
+	String getInitMethodName();
 
 	/**
-	 * Return whether this bean is "abstract", that is, not meant to be instantiated.
+	 * Set the name of the destroy method.
+	 * @since 5.1
 	 */
-	boolean isAbstract();
+	void setDestroyMethodName(@Nullable String destroyMethodName);
+
+	/**
+	 * Return the name of the destroy method.
+	 * @since 5.1
+	 */
+	@Nullable
+	String getDestroyMethodName();
+
+	/**
+	 * Set the role hint for this {@code BeanDefinition}. The role hint
+	 * provides the frameworks as well as tools with an indication of
+	 * the role and importance of a particular {@code BeanDefinition}.
+	 * @since 5.1
+	 * @see #ROLE_APPLICATION
+	 * @see #ROLE_SUPPORT
+	 * @see #ROLE_INFRASTRUCTURE
+	 */
+	void setRole(int role);
 
 	/**
 	 * Get the role hint for this {@code BeanDefinition}. The role hint
@@ -258,10 +291,50 @@ public interface BeanDefinition extends AttributeAccessor, BeanMetadataElement {
 	int getRole();
 
 	/**
+	 * Set a human-readable description of this bean definition.
+	 * @since 5.1
+	 */
+	void setDescription(@Nullable String description);
+
+	/**
 	 * Return a human-readable description of this bean definition.
 	 */
 	@Nullable
 	String getDescription();
+
+
+	// Read-only attributes
+
+	/**
+	 * Return a resolvable type for this bean definition,
+	 * based on the bean class or other specific metadata.
+	 * <p>This is typically fully resolved on a runtime-merged bean definition
+	 * but not necessarily on a configuration-time definition instance.
+	 * @return the resolvable type (potentially {@link ResolvableType#NONE})
+	 * @since 5.2
+	 * @see ConfigurableBeanFactory#getMergedBeanDefinition
+	 */
+	ResolvableType getResolvableType();
+
+	/**
+	 * Return whether this a <b>Singleton</b>, with a single, shared instance
+	 * returned on all calls.
+	 * @see #SCOPE_SINGLETON
+	 */
+	boolean isSingleton();
+
+	/**
+	 * Return whether this a <b>Prototype</b>, with an independent instance
+	 * returned for each call.
+	 * @since 3.0
+	 * @see #SCOPE_PROTOTYPE
+	 */
+	boolean isPrototype();
+
+	/**
+	 * Return whether this bean is "abstract", that is, not meant to be instantiated.
+	 */
+	boolean isAbstract();
 
 	/**
 	 * Return a description of the resource that this bean definition

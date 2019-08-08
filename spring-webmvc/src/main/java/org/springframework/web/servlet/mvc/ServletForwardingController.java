@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.WebUtils;
@@ -87,8 +88,10 @@ import org.springframework.web.util.WebUtils;
  */
 public class ServletForwardingController extends AbstractController implements BeanNameAware {
 
+	@Nullable
 	private String servletName;
 
+	@Nullable
 	private String beanName;
 
 
@@ -129,15 +132,15 @@ public class ServletForwardingController extends AbstractController implements B
 		// If already included, include again, else forward.
 		if (useInclude(request, response)) {
 			rd.include(request, response);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Included servlet [" + this.servletName +
+			if (logger.isTraceEnabled()) {
+				logger.trace("Included servlet [" + this.servletName +
 						"] in ServletForwardingController '" + this.beanName + "'");
 			}
 		}
 		else {
 			rd.forward(request, response);
-			if (logger.isDebugEnabled()) {
-				logger.debug("Forwarded to servlet [" + this.servletName +
+			if (logger.isTraceEnabled()) {
+				logger.trace("Forwarded to servlet [" + this.servletName +
 						"] in ServletForwardingController '" + this.beanName + "'");
 			}
 		}

@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -34,12 +34,17 @@ import org.springframework.util.Assert;
  * @author Juergen Hoeller
  * @since 3.0
  * @see commonj.timers.TimerManager
+ * @deprecated as of 5.1, in favor of EE 7's
+ * {@link org.springframework.scheduling.concurrent.DefaultManagedTaskScheduler}
  */
+@Deprecated
 public abstract class TimerManagerAccessor extends JndiLocatorSupport
 		implements InitializingBean, DisposableBean, Lifecycle {
 
+	@Nullable
 	private TimerManager timerManager;
 
+	@Nullable
 	private String timerManagerName;
 
 	private boolean shared = false;
@@ -139,7 +144,7 @@ public abstract class TimerManagerAccessor extends JndiLocatorSupport
 	@Override
 	public void start() {
 		if (!this.shared) {
-			this.timerManager.resume();
+			obtainTimerManager().resume();
 		}
 	}
 
@@ -150,7 +155,7 @@ public abstract class TimerManagerAccessor extends JndiLocatorSupport
 	@Override
 	public void stop() {
 		if (!this.shared) {
-			this.timerManager.suspend();
+			obtainTimerManager().suspend();
 		}
 	}
 
@@ -162,7 +167,8 @@ public abstract class TimerManagerAccessor extends JndiLocatorSupport
 	 */
 	@Override
 	public boolean isRunning() {
-		return (!this.timerManager.isSuspending() && !this.timerManager.isStopping());
+		TimerManager tm = obtainTimerManager();
+		return (!tm.isSuspending() && !tm.isStopping());
 	}
 
 
@@ -177,7 +183,7 @@ public abstract class TimerManagerAccessor extends JndiLocatorSupport
 	@Override
 	public void destroy() {
 		// Stop the entire TimerManager, if necessary.
-		if (!this.shared) {
+		if (this.timerManager != null && !this.shared) {
 			// May return early, but at least we already cancelled all known Timers.
 			this.timerManager.stop();
 		}

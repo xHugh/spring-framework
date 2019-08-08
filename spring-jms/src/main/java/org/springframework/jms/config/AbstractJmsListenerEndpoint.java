@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,7 @@ import org.springframework.jms.listener.endpoint.JmsMessageEndpointManager;
 import org.springframework.lang.Nullable;
 
 /**
- * Base model for a JMS listener endpoint
+ * Base model for a JMS listener endpoint.
  *
  * @author Stephane Nicoll
  * @author Juergen Hoeller
@@ -35,18 +35,22 @@ import org.springframework.lang.Nullable;
  */
 public abstract class AbstractJmsListenerEndpoint implements JmsListenerEndpoint {
 
-	private String id;
+	private String id = "";
 
+	@Nullable
 	private String destination;
 
+	@Nullable
 	private String subscription;
 
+	@Nullable
 	private String selector;
 
+	@Nullable
 	private String concurrency;
 
 
-	public void setId(@Nullable String id) {
+	public void setId(String id) {
 		this.id = id;
 	}
 

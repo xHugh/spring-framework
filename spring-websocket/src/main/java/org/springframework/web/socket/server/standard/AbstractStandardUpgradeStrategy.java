@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -59,6 +59,7 @@ public abstract class AbstractStandardUpgradeStrategy implements RequestUpgradeS
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
+	@Nullable
 	private volatile List<WebSocketExtension> extensions;
 
 
@@ -84,11 +85,13 @@ public abstract class AbstractStandardUpgradeStrategy implements RequestUpgradeS
 
 	@Override
 	public List<WebSocketExtension> getSupportedExtensions(ServerHttpRequest request) {
-		if (this.extensions == null) {
+		List<WebSocketExtension> extensions = this.extensions;
+		if (extensions == null) {
 			HttpServletRequest servletRequest = ((ServletServerHttpRequest) request).getServletRequest();
-			this.extensions = getInstalledExtensions(getContainer(servletRequest));
+			extensions = getInstalledExtensions(getContainer(servletRequest));
+			this.extensions = extensions;
 		}
-		return this.extensions;
+		return extensions;
 	}
 
 	protected List<WebSocketExtension> getInstalledExtensions(WebSocketContainer container) {

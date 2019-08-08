@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.springframework.web.reactive.accept;
 
 import java.util.ArrayList;
@@ -25,20 +26,19 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.springframework.http.MediaType;
-
+import org.springframework.lang.Nullable;
 
 /**
  * Builder for a composite {@link RequestedContentTypeResolver} that delegates
- * to one or more other resolvers each implementing a different strategy to
- * determine the requested content type(s), e.g. from the Accept header,
- * through a query parameter, or other custom strategy.
+ * to other resolvers each implementing a different strategy to determine the
+ * requested content type -- e.g. Accept header, query parameter, or other.
  *
- * <p>Use methods of this builder to add resolvers in the desired order.
- * The result of the first resolver to return a non-empty list of media types
- * is used.
+ * <p>Use builder methods to add resolvers in the desired order. For a given
+ * request he first resolver to return a list that is not empty and does not
+ * consist of just {@link MediaType#ALL}, will be used.
  *
- * <p>If no resolvers are configured, by default the builder will configure
- * {@link HeaderContentTypeResolver} only.
+ * <p>By default, if no resolvers are explicitly configured, the builder will
+ * add {@link HeaderContentTypeResolver}.
  *
  * @author Rossen Stoyanchev
  * @since 5.0
@@ -49,8 +49,8 @@ public class RequestedContentTypeResolverBuilder {
 
 
 	/**
-	 * Add resolver extracting the requested content type from a query parameter.
-	 * By default the expected query parameter name is {@code "format"}.
+	 * Add a resolver to get the requested content type from a query parameter.
+	 * By default the query parameter name is {@code "format"}.
 	 */
 	public ParameterResolverConfigurer parameterResolver() {
 		ParameterResolverConfigurer parameterBuilder = new ParameterResolverConfigurer();
@@ -59,7 +59,7 @@ public class RequestedContentTypeResolverBuilder {
 	}
 
 	/**
-	 * Add resolver extracting the requested content type from the
+	 * Add resolver to get the requested content type from the
 	 * {@literal "Accept"} header.
 	 */
 	public void headerResolver() {
@@ -67,7 +67,7 @@ public class RequestedContentTypeResolverBuilder {
 	}
 
 	/**
-	 * Add resolver that always returns a fixed set of media types.
+	 * Add resolver that returns a fixed set of media types.
 	 * @param mediaTypes the media types to use
 	 */
 	public void fixedResolver(MediaType... mediaTypes) {
@@ -87,34 +87,32 @@ public class RequestedContentTypeResolverBuilder {
 	 * of resolvers configured through this builder.
 	 */
 	public RequestedContentTypeResolver build() {
-
-		List<RequestedContentTypeResolver> resolvers =
-				this.candidates.isEmpty() ?
-						Collections.singletonList(new HeaderContentTypeResolver()) :
-						this.candidates.stream().map(Supplier::get).collect(Collectors.toList());
+		List<RequestedContentTypeResolver> resolvers = (!this.candidates.isEmpty() ?
+				this.candidates.stream().map(Supplier::get).collect(Collectors.toList()) :
+				Collections.singletonList(new HeaderContentTypeResolver()));
 
 		return exchange -> {
 			for (RequestedContentTypeResolver resolver : resolvers) {
-				List<MediaType> type = resolver.resolveMediaTypes(exchange);
-				if (type.isEmpty() || (type.size() == 1 && type.contains(MediaType.ALL))) {
+				List<MediaType> mediaTypes = resolver.resolveMediaTypes(exchange);
+				if (mediaTypes.equals(RequestedContentTypeResolver.MEDIA_TYPE_ALL_LIST)) {
 					continue;
 				}
-				return type;
+				return mediaTypes;
 			}
-			return Collections.emptyList();
+			return RequestedContentTypeResolver.MEDIA_TYPE_ALL_LIST;
 		};
 	}
 
 
 	/**
-	 * Helps to create a {@link ParameterContentTypeResolver}.
+	 * Helper to create and configure {@link ParameterContentTypeResolver}.
 	 */
 	public static class ParameterResolverConfigurer {
 
 		private final Map<String, MediaType> mediaTypes = new HashMap<>();
 
+		@Nullable
 		private String parameterName;
-
 
 		/**
 		 * Configure a mapping between a lookup key (extracted from a query
@@ -145,7 +143,10 @@ public class RequestedContentTypeResolverBuilder {
 			return this;
 		}
 
-		RequestedContentTypeResolver createResolver() {
+		/**
+		 * Private factory method to create the resolver.
+		 */
+		private RequestedContentTypeResolver createResolver() {
 			ParameterContentTypeResolver resolver = new ParameterContentTypeResolver(this.mediaTypes);
 			if (this.parameterName != null) {
 				resolver.setParameterName(this.parameterName);

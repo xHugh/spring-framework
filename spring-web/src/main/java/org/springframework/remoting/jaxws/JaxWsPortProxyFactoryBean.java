@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +20,7 @@ import javax.xml.ws.BindingProvider;
 
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -34,6 +35,7 @@ import org.springframework.util.Assert;
  */
 public class JaxWsPortProxyFactoryBean extends JaxWsPortClientInterceptor implements FactoryBean<Object> {
 
+	@Nullable
 	private Object serviceProxy;
 
 
@@ -54,6 +56,7 @@ public class JaxWsPortProxyFactoryBean extends JaxWsPortClientInterceptor implem
 
 
 	@Override
+	@Nullable
 	public Object getObject() {
 		return this.serviceProxy;
 	}

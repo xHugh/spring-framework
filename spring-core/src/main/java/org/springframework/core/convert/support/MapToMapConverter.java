@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -62,6 +62,7 @@ final class MapToMapConverter implements ConditionalGenericConverter {
 
 	@Override
 	@SuppressWarnings("unchecked")
+	@Nullable
 	public Object convert(@Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
 		if (source == null) {
 			return null;
@@ -132,8 +133,10 @@ final class MapToMapConverter implements ConditionalGenericConverter {
 
 	private static class MapEntry {
 
+		@Nullable
 		private final Object key;
 
+		@Nullable
 		private final Object value;
 
 		public MapEntry(@Nullable Object key, @Nullable Object value) {

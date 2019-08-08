@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,6 +37,7 @@ import org.springframework.util.Assert;
  */
 public class EhCacheCacheManager extends AbstractTransactionSupportingCacheManager {
 
+	@Nullable
 	private net.sf.ehcache.CacheManager cacheManager;
 
 
@@ -59,7 +60,7 @@ public class EhCacheCacheManager extends AbstractTransactionSupportingCacheManag
 	/**
 	 * Set the backing EhCache {@link net.sf.ehcache.CacheManager}.
 	 */
-	public void setCacheManager(net.sf.ehcache.CacheManager cacheManager) {
+	public void setCacheManager(@Nullable net.sf.ehcache.CacheManager cacheManager) {
 		this.cacheManager = cacheManager;
 	}
 

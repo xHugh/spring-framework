@@ -1,11 +1,11 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,11 +16,11 @@
 
 package org.springframework.web.util.pattern;
 
-import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.springframework.web.util.UriUtils;
+import org.springframework.http.server.PathContainer.PathSegment;
+import org.springframework.lang.Nullable;
 
 /**
  * A path element representing capturing a piece of the path as a variable. In the pattern
@@ -34,10 +34,12 @@ class CaptureVariablePathElement extends PathElement {
 
 	private final String variableName;
 
+	@Nullable
 	private Pattern constraintPattern;
 
 
 	/**
+	 * Create a new {@link CaptureVariablePathElement} instance.
 	 * @param pos the position in the pattern of this capture element
 	 * @param captureDescriptor is of the form {AAAAA[:pattern]}
 	 */
@@ -70,25 +72,20 @@ class CaptureVariablePathElement extends PathElement {
 
 
 	@Override
-	public boolean matches(int candidateIndex, PathPattern.MatchingContext matchingContext) {
-		int nextPos = matchingContext.scanAhead(candidateIndex);
-		// There must be at least one character to capture:
-		if (nextPos == candidateIndex) {
+	public boolean matches(int pathIndex, PathPattern.MatchingContext matchingContext) {
+		if (pathIndex >= matchingContext.pathLength) {
+			// no more path left to match this element
+			return false;
+		}
+		String candidateCapture = matchingContext.pathElementValue(pathIndex);
+		if (candidateCapture.length() == 0) {
 			return false;
 		}
 
-		String substringForDecoding = null;
-		CharSequence candidateCapture = null;
 		if (this.constraintPattern != null) {
-			// TODO possible optimization - only regex match if rest of pattern matches? Benefit likely to vary pattern to pattern
-			if (includesPercent(matchingContext.candidate, candidateIndex, nextPos)) {
-				substringForDecoding = new String(matchingContext.candidate, candidateIndex, nextPos);
-				candidateCapture = UriUtils.decode(substringForDecoding, StandardCharsets.UTF_8);
-			}
-			else {
-				candidateCapture = new SubSequence(matchingContext.candidate, candidateIndex, nextPos);
-			}
-			Matcher matcher = constraintPattern.matcher(candidateCapture);
+			// TODO possible optimization - only regex match if rest of pattern matches?
+			// Benefit likely to vary pattern to pattern
+			Matcher matcher = this.constraintPattern.matcher(candidateCapture);
 			if (matcher.groupCount() != 0) {
 				throw new IllegalArgumentException(
 						"No capture groups allowed in the constraint regex: " + this.constraintPattern.pattern());
@@ -99,34 +96,31 @@ class CaptureVariablePathElement extends PathElement {
 		}
 
 		boolean match = false;
-		if (this.next == null) {
-			if (matchingContext.determineRemainingPath && nextPos > candidateIndex) {
-				matchingContext.remainingPathIndex = nextPos;
+		pathIndex++;
+		if (isNoMorePattern()) {
+			if (matchingContext.determineRemainingPath) {
+				matchingContext.remainingPathIndex = pathIndex;
 				match = true;
 			}
 			else {
 				// Needs to be at least one character #SPR15264
-				match = (nextPos == matchingContext.candidateLength && nextPos > candidateIndex);
-				if (!match && matchingContext.isAllowOptionalTrailingSlash()) {
-					match = (nextPos > candidateIndex) &&
-						    (nextPos + 1) == matchingContext.candidateLength && 
-						     matchingContext.candidate[nextPos] == separator;
+				match = (pathIndex == matchingContext.pathLength);
+				if (!match && matchingContext.isMatchOptionalTrailingSeparator()) {
+					match = //(nextPos > candidateIndex) &&
+							(pathIndex + 1) == matchingContext.pathLength &&
+							matchingContext.isSeparator(pathIndex);
 				}
 			}
 		}
 		else {
-			if (matchingContext.isMatchStartMatching && nextPos == matchingContext.candidateLength) {
-				match = true;  // no more data but matches up to this point
-			}
-			else {
-				match = this.next.matches(nextPos, matchingContext);
+			if (this.next != null) {
+				match = this.next.matches(pathIndex, matchingContext);
 			}
 		}
 
 		if (match && matchingContext.extractingVariables) {
-			matchingContext.set(this.variableName,
-					candidateCapture != null ? candidateCapture.toString():
-					decode(new String(matchingContext.candidate, candidateIndex, nextPos - candidateIndex)));
+			matchingContext.set(this.variableName, candidateCapture,
+					((PathSegment)matchingContext.pathElements.get(pathIndex-1)).parameters());
 		}
 		return match;
 	}
@@ -159,6 +153,17 @@ class CaptureVariablePathElement extends PathElement {
 	public String toString() {
 		return "CaptureVariable({" + this.variableName +
 				(this.constraintPattern != null ? ":" + this.constraintPattern.pattern() : "") + "})";
+	}
+
+	public char[] getChars() {
+		StringBuilder b = new StringBuilder();
+		b.append("{");
+		b.append(this.variableName);
+		if (this.constraintPattern != null) {
+			b.append(":").append(this.constraintPattern.pattern());
+		}
+		b.append("}");
+		return b.toString().toCharArray();
 	}
 
 }
